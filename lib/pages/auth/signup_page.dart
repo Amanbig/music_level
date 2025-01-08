@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:music_level/components/auth_parts/email_password_widget.dart';
 import 'package:music_level/components/auth_parts/google_button.dart';
 import 'package:music_level/services/appwrite_service.dart';
+import 'package:provider/provider.dart';
 
 class SignUpPage extends StatelessWidget {
   SignUpPage({super.key});
 
-  final appwriteService = AppwriteService();
 
   @override
   Widget build(BuildContext context) {
+
+    final appwriteService = Provider.of<AppwriteService>(context, listen: false);
+
     return Scaffold(
       backgroundColor: Colors.black, // Dark background
       body: SafeArea(

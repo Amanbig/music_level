@@ -7,6 +7,7 @@ import 'package:music_level/pages/music_preview_page.dart';
 import 'package:music_level/services/appwrite_service.dart';
 import 'package:music_level/services/gemini_service.dart';
 import 'package:music_level/services/music_gen_service.dart';
+import 'package:provider/provider.dart';
 
 class GeneratePage extends StatefulWidget {
   const GeneratePage({super.key});
@@ -35,7 +36,6 @@ class _GeneratePageState extends State<GeneratePage>
     'Metal',
   ];
   final musicGenService = MusicGenerationService();
-  AppwriteService  appwriteService = AppwriteService();
 
   late AnimationController controller;
   late Tween<double> tween;
@@ -61,6 +61,9 @@ class _GeneratePageState extends State<GeneratePage>
 
   @override
   Widget build(BuildContext context) {
+
+    final appwriteService = Provider.of<AppwriteService>(context, listen: false);
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(

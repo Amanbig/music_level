@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:music_level/services/appwrite_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -9,32 +10,25 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final AppwriteService appwriteService = AppwriteService();
-
   @override
   void initState() {
-    // _navigateBasedOnUserStatus();
-    appwriteService.checkSession().then((value) {
-      if (value) {
-        Navigator.pushReplacementNamed(context, '/');
-      } else {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    });
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkUserSession();
+    });
   }
 
-  Future<void> _navigateBasedOnUserStatus() async {
+  Future<void> _checkUserSession() async {
+    final appwriteService = Provider.of<AppwriteService>(context, listen: false);
     try {
-      final user = await appwriteService.getCurrentUser();
-      if (!mounted) return; // Ensure context is still valid
-      if (user != null) {
+      final isSessionActive = await appwriteService.getCurrentUser();
+      if (!mounted) return;
+      if (isSessionActive == Null) {
         Navigator.pushReplacementNamed(context, '/');
       } else {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (e) {
-      // Handle errors gracefully
       print('Error during navigation: $e');
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/error'); // Optional error page
@@ -63,9 +57,9 @@ class _SplashScreenState extends State<SplashScreen> {
           Text(
             'Music Level',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),

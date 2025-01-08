@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:music_level/components/auth_parts/email_password_widget.dart';
 import 'package:music_level/components/auth_parts/google_button.dart';
 import 'package:music_level/services/appwrite_service.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
 
-  final appwriteService = AppwriteService();
-
   @override
   Widget build(BuildContext context) {
+    final appwriteService = Provider.of<AppwriteService>(context, listen: false); // Accessing the service
+
     return Scaffold(
       backgroundColor: Colors.black, // Dark background
       body: SafeArea(
@@ -21,19 +22,19 @@ class LoginPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    Center(
+                  Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(50), // Circular border
                       child: Image.asset(
-                      'assets/icon.jpg', // Replace with your logo path
-                      width: 100,
-                      height: 100,
+                        'assets/icon.jpg', // Replace with your logo path
+                        width: 100,
+                        height: 100,
                       ),
                     ),
-                    ),
+                  ),
                   const SizedBox(height: 24),
-                  Center(
-                    child: const Text(
+                  const Center(
+                    child: Text(
                       'Login',
                       style: TextStyle(
                         fontSize: 32,
@@ -43,8 +44,7 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  // Using EmailPasswordWidget with isSignUp: false for Login
-                  const EmailPasswordWidget(isSignUp: false),
+                  const EmailPasswordWidget(isSignUp: false), // Using EmailPasswordWidget for login
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -55,7 +55,6 @@ class LoginPage extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to the Sign Up page
                           Navigator.pushReplacementNamed(context, '/signup');
                         },
                         child: const Text(
@@ -69,8 +68,8 @@ class LoginPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Center(
-                    child: const Text(
+                  const Center(
+                    child: Text(
                       'Or continue with',
                       style: TextStyle(color: Colors.white),
                     ),
@@ -78,29 +77,23 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(height: 20),
                   GoogleButton(
                     onPressed: () async {
-                       appwriteService.continueWithGoogle().then((value) {
-                              if (value) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                    "Google Login Successful",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  backgroundColor: Colors.green.shade400,
-                                ));
-                                Navigator.pushReplacementNamed(
-                                    context, "/");
-                              } else {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                    "Google Login Failed",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  backgroundColor: Colors.red.shade400,
-                                ));
-                              }
-                            });
+                      bool isSuccess = await appwriteService.continueWithGoogle();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isSuccess
+                                ? "Google Login Successful"
+                                : "Google Login Failed",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: isSuccess
+                              ? Colors.green.shade400
+                              : Colors.red.shade400,
+                        ),
+                      );
+                      if (isSuccess) {
+                        Navigator.pushReplacementNamed(context, "/");
+                      }
                     },
                   ),
                 ],

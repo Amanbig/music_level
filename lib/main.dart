@@ -6,6 +6,7 @@ import 'package:music_level/pages/auth/signup_page.dart';
 import 'package:music_level/pages/main_screen.dart';
 import 'package:music_level/pages/splash_screen.dart';
 import 'package:music_level/services/appwrite_service.dart';
+import 'package:provider/provider.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +16,14 @@ void main() async{
 ]);
   // Load environment variables
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_)=>AppwriteService())
+    ],
+    child: MyApp(),
+  )
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -31,7 +39,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
         useMaterial3: true,
       ),
-      initialRoute: '/loading', // Set initial route to Login page
+      initialRoute: '/login', // Set initial route to Login page
       routes: {
         '/': (context) => const MainScreen(),
         '/login': (context) => LoginPage(),

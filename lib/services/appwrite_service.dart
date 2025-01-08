@@ -1,13 +1,14 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/enums.dart';
 import 'package:appwrite/models.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class AppwriteService {
-  late Client _client;
-  late Account _account;
-  late Databases _databases;
-  late Storage _storage;
+class AppwriteService extends ChangeNotifier {
+  late final Client _client;
+  late final Account _account;
+  late final Databases _databases;
+  late final Storage _storage;
 
   final String? appwriteUrl = dotenv.env['APPWRITE_URL'];
   final String? projectId = dotenv.env['PROJECT_ID'];
@@ -16,8 +17,12 @@ class AppwriteService {
   final String? bucketId = dotenv.env['BUCKET_ID'];
 
   AppwriteService() {
+    _initializeClient();
+  }
+
+  void _initializeClient() {
     _client = Client()
-      ..setEndpoint(appwriteUrl!) // Ensure this is correctly loaded
+      ..setEndpoint(appwriteUrl!)
       ..setProject(projectId!)
       ..setSelfSigned(status: true);
 
@@ -46,11 +51,11 @@ class AppwriteService {
       );
       return document;
     } catch (e) {
-      print('Error creating document: $e');
+      debugPrint('Error creating document: $e');
       return null;
     }
   }
-  
+
   Future<List<Document>?> getDocuments() async {
     try {
       final documents = await _databases.listDocuments(
@@ -59,7 +64,7 @@ class AppwriteService {
       );
       return documents.documents;
     } catch (e) {
-      print('Error retrieving documents: $e');
+      debugPrint('Error retrieving documents: $e');
       return null;
     }
   }
@@ -73,7 +78,7 @@ class AppwriteService {
       );
       return file;
     } catch (e) {
-      print('Error uploading file: $e');
+      debugPrint('Error uploading file: $e');
       return null;
     }
   }
@@ -86,6 +91,7 @@ class AppwriteService {
         password: password,
         name: name,
       );
+      notifyListeners();
       return "success";
     } on AppwriteException catch (e) {
       return 'SignUp Error: ${e.message}';
@@ -94,11 +100,11 @@ class AppwriteService {
 
   Future<String?> login(String email, String password) async {
     try {
-      // Clear any existing session
       await _account.createEmailPasswordSession(
         email: email,
         password: password,
       );
+      notifyListeners();
       return "success";
     } on AppwriteException catch (e) {
       return 'Login Error: ${e.message}';
@@ -107,25 +113,25 @@ class AppwriteService {
 
   Future<void> logout() async {
     try {
-      bool? isSessionActive = await checkSession();
-      if (isSessionActive != true) {
-        print('No active session to log out from.');
-        return;
+      if (await checkSession()) {
+        await _account.deleteSession(sessionId: 'current');
+        notifyListeners();
+        debugPrint('Logged out successfully');
+      } else {
+        debugPrint('No active session to log out from.');
       }
-      await _account.deleteSession(sessionId: 'current');
-      print('Logged out successfully');
     } on AppwriteException catch (e) {
-      print('Error logging out: ${e.message}');
+      debugPrint('Error logging out: ${e.message}');
     }
   }
 
-  Future<User?> getCurrentUser() async {
+  Future<List?> getCurrentUser() async {
     try {
       final user = await _account.get();
-      print('User details: ${user.toMap()}');
-      return user;
+      debugPrint('User details: ${user.toMap()}');
+      return user as List<dynamic>;
     } on AppwriteException catch (e) {
-      print('Error getting current user: ${e.message}');
+      debugPrint('Error getting current user: ${e.message}');
       return null;
     }
   }
@@ -134,21 +140,23 @@ class AppwriteService {
     try {
       await _account.getSession(sessionId: "current");
       return true;
-    } on AppwriteException catch(e) {
-      print('No active session: ${e.message}');
+    } on AppwriteException catch (e) {
+      debugPrint('No active session: ${e.message}');
       return false;
     }
   }
 
   Future<bool> continueWithGoogle() async {
-  try {
-    final response = await _account
-        .createOAuth2Session(provider: OAuthProvider.google, scopes: ["profile", "email"]);
-    print(response);
-    return true;
-  } catch (e) {
-    print("error : ${e.toString()}");
-    return false;
+    try {
+      await _account.createOAuth2Session(
+        provider: OAuthProvider.google,
+        scopes: ["profile", "email"],
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint("Error: ${e.toString()}");
+      return false;
+    }
   }
-}
 }
