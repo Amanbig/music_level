@@ -76,25 +76,44 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   GoogleButton(
-                    onPressed: () async {
-                      bool isSuccess = await appwriteService.continueWithGoogle();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isSuccess
-                                ? "Google Login Successful"
-                                : "Google Login Failed",
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: isSuccess
-                              ? Colors.green.shade400
-                              : Colors.red.shade400,
-                        ),
-                      );
-                      if (isSuccess) {
-                        Navigator.pushReplacementNamed(context, "/");
+                      onPressed: () async {
+                        try {
+                          await appwriteService.continueWithGoogle();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                "Google Login Successful",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.green.shade400,
+                            ),
+                          );
+
+                          Navigator.pushReplacementNamed(context, "/");
+                        } on AppwriteServiceException catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Google Login Failed: ${e.details ?? 'Please try again.'}',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.red.shade400,
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'An unexpected error occurred. Please try again. $e',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.red.shade400,
+                            ),
+                          );
+                        }
                       }
-                    },
+
                   ),
                 ],
               ),

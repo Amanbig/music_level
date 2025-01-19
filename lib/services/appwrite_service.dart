@@ -4,39 +4,75 @@ import 'package:appwrite/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+// Custom exception for Appwrite service errors
+class AppwriteServiceException implements Exception {
+  final String message;
+  final String? code;
+  final dynamic details;
+
+  AppwriteServiceException(this.message, {this.code, this.details});
+
+  @override
+  String toString() => 'AppwriteServiceException: $message${code != null ? ' (Code: $code)' : ''}';
+}
+
 class AppwriteService extends ChangeNotifier {
   late final Client _client;
   late final Account _account;
   late final Databases _databases;
   late final Storage _storage;
 
-  final String? appwriteUrl = dotenv.env['APPWRITE_URL'];
-  final String? projectId = dotenv.env['PROJECT_ID'];
-  final String? databaseId = dotenv.env['DATABASE_ID'];
-  final String? collectionId = dotenv.env['COLLECTION_ID'];
-  final String? bucketId = dotenv.env['BUCKET_ID'];
+  // Session management
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+  User? _currentUser;
+  User? get currentUser => _currentUser;
+
+  // Configuration
+  final String appwriteUrl = dotenv.env['APPWRITE_URL'] ?? '';
+  final String projectId = dotenv.env['PROJECT_ID'] ?? '';
+  final String databaseId = dotenv.env['DATABASE_ID'] ?? '';
+  final String collectionId = dotenv.env['COLLECTION_ID'] ?? '';
+  final String bucketId = dotenv.env['BUCKET_ID'] ?? '';
 
   AppwriteService() {
+    _validateConfig();
     _initializeClient();
   }
 
-  void _initializeClient() {
-    _client = Client()
-      ..setEndpoint(appwriteUrl!)
-      ..setProject(projectId!)
-      ..setSelfSigned(status: true);
-
-    _account = Account(_client);
-    _databases = Databases(_client);
-    _storage = Storage(_client);
+  void _validateConfig() {
+    if (appwriteUrl?.isEmpty ?? true) throw AppwriteServiceException('APPWRITE_URL is not configured');
+    if (projectId?.isEmpty ?? true) throw AppwriteServiceException('PROJECT_ID is not configured');
+    if (databaseId?.isEmpty ?? true) throw AppwriteServiceException('DATABASE_ID is not configured');
+    if (collectionId?.isEmpty ?? true) throw AppwriteServiceException('COLLECTION_ID is not configured');
+    if (bucketId?.isEmpty ?? true) throw AppwriteServiceException('BUCKET_ID is not configured');
   }
 
-  Future<Document?> createDocument(Map<String, dynamic> data) async {
+  void _initializeClient() {
+    try {
+      _client = Client()
+        ..setEndpoint(appwriteUrl!)
+        ..setProject(projectId!)
+        ..setSelfSigned(status: true);
+
+      _account = Account(_client);
+      _databases = Databases(_client);
+      _storage = Storage(_client);
+      _isInitialized = true;
+    } catch (e) {
+      throw AppwriteServiceException('Failed to initialize Appwrite client: $e');
+    }
+  }
+
+  // Document operations
+  Future<Document> createDocument(Map<String, dynamic> data) async {
+    await _checkSession();
+
     try {
       final document = await _databases.createDocument(
         databaseId: databaseId!,
         collectionId: collectionId!,
-        documentId: 'unique()',
+        documentId: ID.unique(),
         permissions: [
           Permission.read(Role.user(data['user_id'])),
           Permission.write(Role.user(data['user_id'])),
@@ -47,67 +83,111 @@ class AppwriteService extends ChangeNotifier {
           'lyrics': data['lyrics'],
           'audio_url': data['audio_url'],
           'user_id': data['user_id'],
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
         },
       );
       return document;
-    } catch (e) {
-      debugPrint('Error creating document: $e');
-      return null;
+    } on AppwriteException catch (e) {
+      throw AppwriteServiceException(
+        'Failed to create document',
+        code: e.code.toString(),
+        details: e.message,
+      );
     }
   }
 
-  Future<List<Document>?> getDocuments() async {
+  Future<List<Document>> getDocuments({
+    List<String>? queries,
+    int? limit,
+    int? offset,
+  }) async {
+    await _checkSession();
+
     try {
       final documents = await _databases.listDocuments(
         databaseId: databaseId!,
         collectionId: collectionId!,
+        queries: queries,
       );
       return documents.documents;
-    } catch (e) {
-      debugPrint('Error retrieving documents: $e');
-      return null;
+    } on AppwriteException catch (e) {
+      throw AppwriteServiceException(
+        'Failed to retrieve documents',
+        code: e.code.toString(),
+        details: e.message,
+      );
     }
   }
 
-  Future<File?> uploadFile(String filePath) async {
+  // File operations
+  Future<File> uploadFile(String filePath) async {
+    await _checkSession();
+
     try {
       final file = await _storage.createFile(
         bucketId: bucketId!,
-        fileId: 'unique()',
+        fileId: ID.unique(),
         file: InputFile.fromPath(path: filePath),
+        permissions: [
+          Permission.read(Role.user(currentUser?.$id ?? '')),
+          Permission.write(Role.user(currentUser?.$id ?? '')),
+        ],
       );
       return file;
-    } catch (e) {
-      debugPrint('Error uploading file: $e');
-      return null;
-    }
-  }
-
-  Future<String?> signUp(String name, String email, String password) async {
-    try {
-      await _account.create(
-        userId: ID.unique(),
-        email: email,
-        password: password,
-        name: name,
-      );
-      notifyListeners();
-      return "success";
     } on AppwriteException catch (e) {
-      return 'SignUp Error: ${e.message}';
+      throw AppwriteServiceException(
+        'Failed to upload file',
+        code: e.code.toString(),
+        details: e.message,
+      );
     }
   }
 
-  Future<String?> login(String email, String password) async {
+  // Authentication
+  Future<void> signUp(String name, String email, String password) async {
+  try {
+    // Create user with specific parameters as strings
+    final user = await _account.create(
+      userId: ID.unique(),
+      email: email,
+      password: password,
+      name: name,
+      // Removed the roles parameter as it is not defined
+    );
+    print("User created: ${user.toMap()}"); // Add this debug line
+    _currentUser = user;
+    
+    // Create a session immediately after signup
+    await _account.createEmailPasswordSession(
+      email: email,
+      password: password,
+    );
+    
+    notifyListeners();
+  } on AppwriteException catch (e) {
+    throw AppwriteServiceException(
+      'Failed to sign up',
+      code: e.code.toString(),
+      details: e.message,
+    );
+  }
+}
+
+  Future<void> login(String email, String password) async {
     try {
       await _account.createEmailPasswordSession(
         email: email,
         password: password,
       );
+      await loadCurrentUser();
       notifyListeners();
-      return "success";
     } on AppwriteException catch (e) {
-      return 'Login Error: ${e.message}';
+      throw AppwriteServiceException(
+        'Failed to login',
+        code: e.code.toString(),
+        details: e.message,
+      );
     }
   }
 
@@ -115,48 +195,79 @@ class AppwriteService extends ChangeNotifier {
     try {
       if (await checkSession()) {
         await _account.deleteSession(sessionId: 'current');
+        _currentUser = null;
         notifyListeners();
-        debugPrint('Logged out successfully');
-      } else {
-        debugPrint('No active session to log out from.');
       }
     } on AppwriteException catch (e) {
-      debugPrint('Error logging out: ${e.message}');
+      throw AppwriteServiceException(
+        'Failed to logout',
+        code: e.code.toString(),
+        details: e.message,
+      );
     }
   }
 
-  Future<List?> getCurrentUser() async {
-    try {
-      final user = await _account.get();
-      debugPrint('User details: ${user.toMap()}');
-      return user as List<dynamic>;
-    } on AppwriteException catch (e) {
-      debugPrint('Error getting current user: ${e.message}');
-      return null;
-    }
-  }
-
-  Future<bool> checkSession() async {
-    try {
-      await _account.getSession(sessionId: "current");
-      return true;
-    } on AppwriteException catch (e) {
-      debugPrint('No active session: ${e.message}');
-      return false;
-    }
-  }
-
-  Future<bool> continueWithGoogle() async {
+  Future<void> continueWithGoogle() async {
     try {
       await _account.createOAuth2Session(
         provider: OAuthProvider.google,
-        scopes: ["profile", "email"],
+        scopes: ['profile', 'email'],
       );
+      // await loadCurrentUser();
       notifyListeners();
+    } on AppwriteException catch (e) {
+      throw AppwriteServiceException(
+        'Failed to authenticate with Google',
+        code: e.code.toString(),
+        details: e.message,
+      );
+    }
+  }
+
+  // Session management
+  Future<bool> checkSession() async {
+    try {
+      await _account.getSession(sessionId: 'current');
       return true;
-    } catch (e) {
-      debugPrint("Error: ${e.toString()}");
+    } on AppwriteException {
       return false;
     }
+  }
+
+  Future<void> _checkSession() async {
+    if (!await checkSession()) {
+      throw AppwriteServiceException('No active session. Please login first.');
+    }
+  }
+
+  Future<void> loadCurrentUser() async {
+    try {
+      var session = await _account.getSession(sessionId: 'current');
+      if (session == null) {
+        throw AppwriteServiceException('No valid session found');
+      }
+
+      _currentUser = await _account.get();
+
+      // Add debug log to inspect the fields
+      print('Current User: $_currentUser');
+      print('User email: ${_currentUser?.email}');
+      // print('User roles: ${_currentUser?}');  // Add other fields as necessary
+    } on AppwriteException catch (e) {
+      throw AppwriteServiceException(
+        'Failed to load user details',
+        code: e.code.toString(),
+        details: e.message,
+      );
+    }
+  }
+
+
+
+  @override
+  void dispose() {
+    _isInitialized = false;
+    _currentUser = null;
+    super.dispose();
   }
 }

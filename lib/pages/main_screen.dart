@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_level/components/bottom_bar.dart';
 import 'package:music_level/components/generate_loader.dart';
 import 'package:music_level/pages/generate_page.dart';
+import 'package:music_level/pages/home_page.dart';
 import 'package:music_level/pages/music_preview_page.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _screens = [
-      Container(), // Pass category to HomePage if required
+      HomePage(), // Pass category to HomePage if required
       Container(color: Colors.blue),
       GeneratePage(), // Placeholder for other screens
       MusicPreviewPage(

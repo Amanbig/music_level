@@ -21,17 +21,18 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkUserSession() async {
     final appwriteService = Provider.of<AppwriteService>(context, listen: false);
     try {
-      final isSessionActive = await appwriteService.getCurrentUser();
+      final isSessionActive = await appwriteService.checkSession();
       if (!mounted) return;
-      if (isSessionActive == Null) {
+      if (isSessionActive) {
         Navigator.pushReplacementNamed(context, '/');
       } else {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (e) {
       print('Error during navigation: $e');
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/error'); // Optional error page
+      Navigator.pushReplacementNamed(context, '/login');
+      // if (!mounted) return;
+      // Navigator.pushReplacementNamed(context, '/error'); // Optional error page
     }
   }
 

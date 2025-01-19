@@ -103,45 +103,29 @@ class EmailPasswordWidgetState extends State<EmailPasswordWidget> {
                       try {
                         if (widget.isSignUp) {
                           // Handle sign-up logic
-                          final success = await appwriteService.signUp(
-                            _nameController.text,
-                            _emailController.text,
-                            _passwordController.text,
+                          await appwriteService.signUp(
+                            _nameController.text.trim(),
+                            _emailController.text.trim(),
+                            _passwordController.text.trim(),
                           );
-                          if (success == "success") {
-                            // Navigate to home after successful sign-up
-                            Navigator.pushReplacementNamed(context, '/');
-                          } else {
-                            // Handle sign-up failure (e.g., show an error message)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Sign-up failed. Please try again. $success')),
-                            );
-                          }
+                          // Navigate to home after successful sign-up
+                          Navigator.pushReplacementNamed(context, '/');
                         } else {
                           // Handle login logic
-                          final success = await appwriteService.login(
-                            _emailController.text,
-                            _passwordController.text,
+                          await appwriteService.login(
+                            _emailController.text.trim(),
+                            _passwordController.text.trim(),
                           );
-                          if (success == "success") {
-                            // Navigate to home after successful login
-                            Navigator.pushReplacementNamed(context, '/');
-                          } else {
-                            // Handle login failure (e.g., show an error message)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Login failed. Please try again. $success')),
-                            );
-                          }
+                          // Navigate to home after successful login
+                          Navigator.pushReplacementNamed(context, '/');
                         }
+                      } on AppwriteServiceException catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${e.message}: ${e.details ?? 'Please try again.'}')),
+                        );
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content:
-                                  Text('An error occurred. Please try again. $e')),
+                          SnackBar(content: Text('An unexpected error occurred. Please try again. $e')),
                         );
                       } finally {
                         setState(() {
