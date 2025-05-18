@@ -45,7 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             setLoading(true);
             await appwriteAuth.login(email, password);
-            await checkAuthStatus();
+            // Make sure we get the current user and set the state
+            const currentUser = await appwriteAuth.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Failed to get user details after login');
+            }
+            setUser(currentUser);
         } catch (error) {
             console.error('Login error:', error);
             throw error;

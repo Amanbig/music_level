@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { appwriteAuth } from '@/lib/appwrite';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -23,7 +24,14 @@ export default function LoginPage() {
 
         try {
             await login(email, password);
-            router.push('/dashboard'); // Redirect to dashboard after login
+            // Wait for a brief moment to ensure auth state is updated
+            await new Promise(resolve => setTimeout(resolve, 100));
+            // Check if user is actually logged in before redirecting
+            if (await appwriteAuth.isLoggedIn()) {
+                router.push('/dashboard');
+            } else {
+                setError('Login successful but session not established. Please try again.');
+            }
         } catch (err: any) {
             setError(err.message || 'Failed to login. Please check your credentials.');
         }

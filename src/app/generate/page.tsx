@@ -11,11 +11,24 @@ export default function GeneratePage() {
     const router = useRouter();
     const [songName, setSongName] = useState('');
     const [extra, setExtra] = useState('');
+    const [instrument, setInstrument] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [result, setResult] = useState('');
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        // Get the instrument from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const instrumentParam = params.get('instrument');
+        if (instrumentParam) {
+            setInstrument(instrumentParam);
+        } else {
+            // Redirect to instrument selection if no instrument is specified
+            router.push('/instruments');
+        }
+    }, [router]);
 
     useEffect(() => {
         // Redirect to login if not authenticated
@@ -39,6 +52,7 @@ export default function GeneratePage() {
                 body: JSON.stringify({
                     songName,
                     extra,
+                    instrument,
                     userId: user?.$id // Include user ID for tracking
                 }),
             });

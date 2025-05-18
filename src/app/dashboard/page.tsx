@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { appwriteAuth } from '@/lib/appwrite';
 
 interface GeneratedTrack {
     id: string;
@@ -20,16 +21,23 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Redirect to login if not authenticated
-        if (!loading && !user) {
-            router.push('/auth/login');
-            return;
-        }
+        const checkAuth = async () => {
+            // Wait for initial loading to complete
+            if (loading) return;
 
-        // Fetch user's tracks when authenticated
-        if (user) {
+            // Check if user is authenticated
+            const isLoggedIn = await appwriteAuth.isLoggedIn();
+
+            if (!isLoggedIn || !user) {
+                router.replace('/auth/login');
+                return;
+            }
+
+            // Fetch user's tracks when authenticated
             fetchUserTracks();
-        }
+        };
+
+        checkAuth();
     }, [user, loading, router]);
 
     const fetchUserTracks = async () => {
@@ -104,10 +112,10 @@ export default function DashboardPage() {
                             Profile
                         </Link>
                         <Link
-                            href="/generate"
+                            href="/instruments"
                             className="py-2 px-4 bg-foreground text-background rounded-md font-medium hover:bg-[#383838] dark:hover:bg-[#ccc] transition-colors"
                         >
-                            Generate New
+                            Create New
                         </Link>
                     </div>
                 </div>

@@ -2,7 +2,7 @@ import { Client, Account, ID } from 'appwrite';
 
 // Appwrite configuration
 export const appwriteConfig = {
-    endpoint: 'https://cloud.appwrite.io/v1', // Your Appwrite endpoint
+    endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1', // Your Appwrite endpoint
     projectId: '682a11d0003a25850112', // Your Appwrite project ID
     databaseId: '682a12620002896be20d', // Your Appwrite database ID
     storageBucketId: 'midi-files', // Your Appwrite storage bucket ID
@@ -43,7 +43,7 @@ export const appwriteAuth = {
     // Login user
     login: async (email: string, password: string) => {
         try {
-            return await account.createSession(email, password);
+            return await account.createEmailPasswordSession(email, password);
         } catch (error) {
             console.error('Appwrite service :: login :: error', error);
             throw error;
