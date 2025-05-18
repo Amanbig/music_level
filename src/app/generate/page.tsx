@@ -57,13 +57,16 @@ export default function GeneratePage() {
                 }),
             });
 
-            const text = await response.text();
-
             if (!response.ok) {
-                throw new Error(text || 'Failed to generate music');
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to generate music');
             }
 
-            setResult(text);
+            const data = await response.json();
+            setResult(data.message);
+
+            // Store the note count for later use
+            const noteCount = data.noteCount || 0;
 
             // Trigger download of the generated MIDI file
             const downloadLink = document.createElement('a');
@@ -75,7 +78,7 @@ export default function GeneratePage() {
 
             // Save to user's account if authenticated
             if (user) {
-                await saveToUserAccount();
+                await saveToUserAccount(noteCount);
             }
 
         } catch (err: any) {
@@ -85,33 +88,30 @@ export default function GeneratePage() {
         }
     };
 
-    const saveToUserAccount = async () => {
+    const saveToUserAccount = async (noteCount = 0) => {
         try {
             setIsSaving(true);
 
-            // In a real implementation, you would:
-            // 1. Fetch the generated MIDI file
-            // 2. Create a File object
-            // 3. Upload to Appwrite storage
-
-            // Example implementation (commented out as it would need the actual file):
-            /*
+            // Fetch the generated MIDI file
             const response = await fetch('/output.mid');
             const blob = await response.blob();
             const file = new File([blob], `${songName || 'generated'}_melody.mid`, { type: 'audio/midi' });
-            
-            await uploadMidiFile(file, user.$id, {
+
+            // Upload to Appwrite storage with metadata
+            await uploadMidiFile(file, user!.$id, {
                 songName: songName || 'Untitled Melody',
+                instrument: instrument || 'piano',
                 extra: extra || '',
-                noteCount: 0, // You would get this from the API response
+                noteCount: noteCount, // Use the note count from API response
                 generatedAt: new Date().toISOString()
             });
-            */
-
-            // For now, just simulate a delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
             setResult(prev => prev + '\nSaved to your account!');
+
+            // Redirect to dashboard after short delay
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 2000);
         } catch (err: any) {
             console.error('Error saving to account:', err);
             setError('Generated successfully but failed to save to your account');

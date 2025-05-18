@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { appwriteAuth } from '@/lib/appwrite';
+import { getUserMidiFiles, getMidiFileDownloadUrl, deleteMidiFile } from '@/lib/storage';
 
 interface GeneratedTrack {
     id: string;
@@ -43,24 +44,21 @@ export default function DashboardPage() {
     const fetchUserTracks = async () => {
         setIsLoading(true);
         try {
-            // In a real implementation, this would fetch from Appwrite storage
-            // For now, we'll use mock data
-            setTracks([
-                {
-                    id: '1',
-                    name: 'Piano Melody',
-                    date: new Date().toLocaleDateString(),
-                    notes: 120,
-                    fileId: 'mock-file-id-1'
-                },
-                {
-                    id: '2',
-                    name: 'Fur Elise Recreation',
-                    date: new Date(Date.now() - 86400000).toLocaleDateString(), // Yesterday
-                    notes: 245,
-                    fileId: 'mock-file-id-2'
-                }
-            ]);
+            if (!user) return;
+
+            // Fetch files from Appwrite storage using our storage utility
+            const files = await getUserMidiFiles(user.$id);
+
+            // Transform files into track format
+            const userTracks = files.files.map(file => ({
+                id: file.$id,
+                name: file.name.replace('.mid', ''),
+                date: new Date(file.$createdAt).toLocaleDateString(),
+                notes: file.$metadata?.noteCount || 0,
+                fileId: file.$id
+            }));
+
+            setTracks(userTracks);
         } catch (error) {
             console.error('Error fetching tracks:', error);
         } finally {
@@ -70,24 +68,21 @@ export default function DashboardPage() {
 
     const handleDownload = async (track: GeneratedTrack) => {
         try {
-            // In a real implementation, this would download from Appwrite storage
-            alert(`Downloading track: ${track.name}`);
-            // Example implementation with Appwrite:
-            // const file = await storage.getFileDownload('bucket-id', track.fileId);
-            // window.open(file.href, '_blank');
+            const file = await getMidiFileDownloadUrl(track.fileId!);
+            window.open(file.href, '_blank');
         } catch (error) {
             console.error('Error downloading track:', error);
+            alert('Failed to download track');
         }
     };
 
     const handleDelete = async (trackId: string) => {
         try {
-            // In a real implementation, this would delete from Appwrite storage
-            // Example implementation with Appwrite:
-            // await storage.deleteFile('bucket-id', track.fileId);
+            await deleteMidiFile(trackId);
             setTracks(tracks.filter(t => t.id !== trackId));
         } catch (error) {
             console.error('Error deleting track:', error);
+            alert('Failed to delete track');
         }
     };
 

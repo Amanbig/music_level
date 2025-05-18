@@ -16,12 +16,21 @@ export async function POST(req: Request) {
         const body = await req.json();
         const songName = body.songName || ''; // Add song name parameter
         const extra = body.extra || '';
+        const instrument = body.instrument || 'piano';
+        const userId = body.userId || '';
 
-        const notes = await getAIResponse(songName, extra);
+        // Log the request for debugging
+        console.log(`Generating music: ${songName}, instrument: ${instrument}, userId: ${userId}`);
+
+        const notes = await getAIResponse(songName, extra, instrument);
         await saveNotesAsMidi(notes, 'output.mid');
 
-        return new Response(`MIDI file saved with ${notes.length} notes for "${songName || 'custom melody'}".`, {
-            headers: { 'Content-Type': 'text/plain' },
+        return new Response(JSON.stringify({
+            message: `MIDI file saved with ${notes.length} notes for "${songName || 'custom melody'}".`,
+            noteCount: notes.length,
+            instrument: instrument
+        }), {
+            headers: { 'Content-Type': 'application/json' },
             status: 200
         });
     } catch (error: any) {
@@ -34,7 +43,7 @@ export async function POST(req: Request) {
 }
 
 // Function to get structured note data from Gemini with song reference
-async function getAIResponse(songName: string, extra: string): Promise<Note[]> {
+async function getAIResponse(songName: string, extra: string, instrument: string = 'piano'): Promise<Note[]> {
     let prompt;
 
     if (songName) {
