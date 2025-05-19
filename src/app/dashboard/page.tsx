@@ -12,7 +12,7 @@ interface GeneratedTrack {
     name: string;
     date: string;
     notes: number;
-    fileId?: string;
+    fileName: string; // Changed from fileId to fileName for clarity
 }
 
 export default function DashboardPage() {
@@ -20,27 +20,24 @@ export default function DashboardPage() {
     const router = useRouter();
     const [tracks, setTracks] = useState<GeneratedTrack[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const checkAuth = async () => {
             console.log('Dashboard - Initial loading state:', loading);
-            // Wait for initial loading to complete
             if (loading) return;
 
-            // Check if user is authenticated
             const isLoggedIn = await supabaseAuth.isLoggedIn();
             console.log('Dashboard - isLoggedIn check result:', isLoggedIn);
             console.log('Dashboard - Current user:', user);
 
             if (!isLoggedIn || !user) {
                 console.log('Dashboard - User not authenticated, redirecting to login');
-                // Use window.location for a hard navigation
                 window.location.href = '/auth/login';
                 return;
             }
 
             console.log('Dashboard - User is authenticated, fetching tracks');
-            // Fetch user's tracks when authenticated
             fetchUserTracks();
         };
 
@@ -49,26 +46,26 @@ export default function DashboardPage() {
 
     const fetchUserTracks = async () => {
         setIsLoading(true);
+        setError('');
         try {
-            if (!user) return;
+            if (!user) throw new Error('User not authenticated');
 
             console.log('Dashboard - Fetching tracks for user:', user.id);
-            // Fetch files from Supabase storage using our storage utility
-            const files = await getUserMidiFiles(user.id);
+            const { files } = await getUserMidiFiles(user.id);
             console.log('Dashboard - Fetched files:', files);
 
-            // Transform files into track format
-            const userTracks = files.files.map(file => ({
+            const userTracks = files.map(file => ({
                 id: file.id,
-                name: file.name.replace('.mid', ''),
+                name: file.metadata?.fileName?.replace('.mid', '') || file.name.replace('.mid', ''),
                 date: new Date(file.created_at).toLocaleDateString(),
                 notes: file.metadata?.noteCount || 0,
-                fileId: file.id
+                fileName: file.name // Store the actual file name (e.g., timestamp_song.mid)
             }));
 
             setTracks(userTracks);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching tracks:', error);
+            setError('Failed to load your tracks. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -76,21 +73,29 @@ export default function DashboardPage() {
 
     const handleDownload = async (track: GeneratedTrack) => {
         try {
-            const file = await getMidiFileDownloadUrl(user?.id!,track.name);
-            window.open(file, '_blank');
-        } catch (error) {
+            setError('');
+            console.log('Dashboard - Downloading track:', { userId: user?.id, fileName: track.fileName });
+            const url = await getMidiFileDownloadUrl(user!.id, track.fileName);
+            window.open(url, '_blank');
+        } catch (error: any) {
             console.error('Error downloading track:', error);
-            alert('Failed to download track');
+            setError('Failed to download track: ' + (error.message || 'Unknown error'));
         }
     };
 
-    const handleDelete = async (trackId: string) => {
+    const handleDelete = async (track: GeneratedTrack) => {
         try {
-            await deleteMidiFile(user?.id!,trackId);
-            setTracks(tracks.filter(t => t.id !== trackId));
-        } catch (error) {
+            setError('');
+            console.log('Dashboard - Deleting track:', { userId: user?.id, fileName: track.fileName });
+            const success = await deleteMidiFile(user!.id, track.fileName);
+            if (success) {
+                setTracks(tracks.filter(t => t.id !== track.id));
+            } else {
+                throw new Error('Delete operation returned false');
+            }
+        } catch (error: any) {
             console.error('Error deleting track:', error);
-            alert('Failed to delete track');
+            setError('Failed to delete track: ' + (error.message || 'Unknown error'));
         }
     };
 
@@ -122,6 +127,12 @@ export default function DashboardPage() {
                         </Link>
                     </div>
                 </div>
+
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
+                        {error}
+                    </div>
+                )}
 
                 <div className="bg-card rounded-lg border p-6">
                     <h2 className="text-xl font-semibold mb-4">Your Generated Music</h2>
@@ -162,7 +173,7 @@ export default function DashboardPage() {
                                                 </button>
                                                 <button
                                                     className="text-sm text-red-500 hover:underline"
-                                                    onClick={() => handleDelete(track.id)}
+                                                    onClick={() => handleDelete(track)}
                                                 >
                                                     Delete
                                                 </button>

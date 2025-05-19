@@ -41,19 +41,14 @@ const ensureBucketExists = async () => {
         const { data: buckets } = await supabase.storage.listBuckets();
         const bucketExists = buckets?.some(b => b.name === MIDI_BUCKET_NAME);
 
-        if (!bucketExists) {
-            const { error } = await supabase.storage.createBucket(MIDI_BUCKET_NAME, {
-                public: false,
-                fileSizeLimit: 10485760, // 10MB
-                allowedMimeTypes: ['audio/midi', 'audio/x-midi']
-            });
-            if (error) throw error;
-        }
+        // if (!bucketExists) {
+        //     throw new Error('Bucket "midi-files" does not exist. Please create it in the Supabase dashboard.');
+        // }
     } catch (error) {
-        console.error('Error ensuring bucket exists:', error);
+        console.error('Error checking bucket:', error);
         throw error;
     }
-}
+};
 
 /**
  * Upload a MIDI file to Supabase storage
@@ -111,9 +106,7 @@ export const uploadMidiFile = async (file: File, userId: string, metadata: any =
 
         if (error) {
             console.error('Storage upload error:', {
-                // status: error.status,
                 message: error.message,
-                // details: error.details,
                 filePath,
                 userId
             });
@@ -152,20 +145,16 @@ export const getUserMidiFiles = async (userId: string) => {
             });
 
         if (error) {
-            console.error('Storage upload error:', {
-                // status: error.status,
+            console.error('Storage list error:', {
                 message: error.message,
-                // details: error.details,
-                // filePath,
                 userId
             });
             throw error;
         }
 
-        console.log('File uploaded successfully:', {
-            // path: data?.path,
+        console.log('Files retrieved successfully:', {
             userId,
-            // fileName: file.name
+            fileCount: data.length
         });
 
         return {
@@ -184,14 +173,30 @@ export const getUserMidiFiles = async (userId: string) => {
  * @param fileName The name of the file to download
  * @returns A URL to download the file
  */
-export const getMidiFileDownloadUrl = (userId: string, fileName: string) => {
+export const getMidiFileDownloadUrl = async (userId: string, fileName: string) => {
     try {
         const filePath = `${userId}/${fileName}`;
-        const { data } = supabase.storage
-            .from(MIDI_BUCKET_NAME)
-            .getPublicUrl(filePath);
+        console.log('Generating download URL:', { bucket: MIDI_BUCKET_NAME, filePath, userId });
 
-        return data.publicUrl;
+        // Verify authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+
+        const { data, error } = await supabase.storage
+            .from(MIDI_BUCKET_NAME)
+            .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+
+        if (error) {
+            console.error('Storage signed URL error:', {
+                message: error.message,
+                filePath,
+                userId
+            });
+            throw error;
+        }
+
+        console.log('Signed URL generated:', data.signedUrl);
+        return data.signedUrl;
     } catch (error) {
         console.error('Error getting MIDI file download URL:', error);
         throw error;
@@ -207,27 +212,26 @@ export const getMidiFileDownloadUrl = (userId: string, fileName: string) => {
 export const deleteMidiFile = async (userId: string, fileName: string) => {
     try {
         const filePath = `${userId}/${fileName}`;
+        console.log('Attempting to delete file:', { bucket: MIDI_BUCKET_NAME, filePath, userId });
+
+        // Verify authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+
         const { error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
             .remove([filePath]);
 
         if (error) {
-            console.error('Storage upload error:', {
-                // status: error.status,
+            console.error('Storage delete error:', {
                 message: error.message,
-                // details: error.details,
                 filePath,
                 userId
             });
             throw error;
         }
 
-        console.log('File uploaded successfully:', {
-            // path: data?.path,
-            userId,
-            // fileName: file.name
-        });
-
+        console.log('File deleted successfully:', { filePath, userId });
         return true;
     } catch (error) {
         console.error('Error deleting MIDI file:', error);

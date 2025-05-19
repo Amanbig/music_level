@@ -17,13 +17,18 @@ export async function POST(req: Request) {
         const songName = body.songName || ''; // Add song name parameter
         const extra = body.extra || '';
         const instrument = body.instrument || 'piano';
+        // Validate instrument against supported list
+        const supportedInstruments = ['piano', 'guitar', 'violin', 'flute', 'drums', 'trumpet', 'saxophone', 'cello'];
+        if (!supportedInstruments.includes(instrument)) {
+            throw new Error(`Unsupported instrument: ${instrument}. Please choose from: ${supportedInstruments.join(', ')}`);
+        }
         const userId = body.userId || '';
 
         // Log the request for debugging
         console.log(`Generating music: ${songName}, instrument: ${instrument}, userId: ${userId}`);
 
         const notes = await getAIResponse(songName, extra, instrument);
-        await saveNotesAsMidi(notes, 'output.mid');
+        await saveNotesAsMidi(notes, 'output.mid', instrument);
 
         return new Response(JSON.stringify({
             message: `MIDI file saved with ${notes.length} notes for "${songName || 'custom melody'}".`,
@@ -49,7 +54,7 @@ async function getAIResponse(songName: string, extra: string, instrument: string
     if (songName) {
         // Prompt for recreating an existing song
         prompt = `
-Generate a JSON array of objects representing piano notes for an accurate piano transcription of "${songName}".
+Generate a JSON array of objects representing ${instrument} notes for an accurate ${instrument} transcription of "${songName}".
 Focus on the main melody and basic chord structure of the song.
 
 Each object must include:
@@ -70,7 +75,7 @@ Return only a valid JSON array of note objects, no additional text or code block
     } else {
         // Original prompt for generating a new melody
         prompt = `
-Generate a JSON array of objects representing piano notes for a musically coherent melody.
+Generate a JSON array of objects representing ${instrument} notes for a musically coherent melody.
 Each object must include:
 - "note": scientific pitch notation (e.g., "C4", "G#5")
 - "time": start time in seconds (non-negative, sequential, e.g., 0, 0.5, 1.0)
@@ -141,10 +146,23 @@ Return only a valid JSON array of note objects, no additional text or code block
 }
 
 // Function to save structured note data as a MIDI file
-async function saveNotesAsMidi(notes: Note[], filePath: string) {
+async function saveNotesAsMidi(notes: Note[], filePath: string, instrument: string = 'piano') {
     const midi = new Midi();
     const track = midi.addTrack();
-    track.instrument.number = 0; // Acoustic Grand Piano
+
+    // Set instrument number based on selected instrument
+    const instrumentNumbers: Record<string, number> = {
+        'piano': 0,      // Acoustic Grand Piano
+        'guitar': 24,    // Acoustic Guitar (nylon)
+        'violin': 40,    // Violin
+        'flute': 73,     // Flute
+        'drums': 118,    // Synth Drum
+        'trumpet': 56,   // Trumpet
+        'saxophone': 66, // Alto Sax
+        'cello': 42      // Cello
+    };
+
+    track.instrument.number = instrumentNumbers[instrument] || 0;
 
     for (const note of notes) {
         try {

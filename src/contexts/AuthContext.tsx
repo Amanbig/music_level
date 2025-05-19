@@ -48,9 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (session?.user) {
                 console.log('AuthContext - Setting user from session');
                 setUser(session.user);
+
+                // Set cookies with Supabase token names
+                document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; secure; samesite=lax`;
+                document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=604800; secure; samesite=lax`;
             } else {
                 console.log('AuthContext - No session user, setting null');
                 setUser(null);
+                // Clear cookies on logout
+                document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
             }
         });
 

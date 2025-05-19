@@ -18,8 +18,8 @@ export function middleware(request: NextRequest) {
     // Check if the path is for the API
     const isApiPath = path.startsWith('/api/');
 
-    // Get the session token from cookies
-    const hasSession = request.cookies.has('access_token') && request.cookies.has('refresh_token');
+    // Get the session token from cookies (consistent with Supabase client config)
+    const hasSession = request.cookies.has('sb-access-token') && request.cookies.has('sb-refresh-token');
     console.log('Middleware - Path:', path);
     console.log('Middleware - Has session:', hasSession);
 

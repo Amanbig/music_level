@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { uploadMidiFile } from '@/lib/storage';
+import axios from 'axios';
 
 export default function GeneratePage() {
     const { user, loading } = useAuth();
@@ -44,42 +45,36 @@ export default function GeneratePage() {
         setError('');
 
         try {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    songName,
-                    extra,
-                    instrument,
-                    userId: user?.id // Include user ID for tracking
-                }),
+            const response = await axios.post('/api/generate', {
+                songName,
+                extra,
+                instrument,
+                userId: user?.id // Include user ID for tracking
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Failed to generate music');
+            if (!response.data) {
+                throw new Error(response.data?.message || 'Failed to generate music');
             }
 
-            const data = await response.json();
+            const data = response.data;
             setResult(data.message);
 
             // Store the note count for later use
             const noteCount = data.noteCount || 0;
 
-            // Trigger download of the generated MIDI file
-            const downloadLink = document.createElement('a');
-            downloadLink.href = '/output.mid';
-            downloadLink.download = `${songName || 'generated'}_melody.mid`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
+            // Get MIDI file from API response
+            const midiBlob = new Blob([data.midiFile], { type: 'audio/midi' });
+            const fileName = `${user?.id}_${Date.now()}_${songName || 'generated'}_melody.mid`;
+            const file = new File([midiBlob], fileName, { type: 'audio/midi' });
 
-            // Save to user's account if authenticated
-            if (user) {
-                await saveToUserAccount(noteCount);
-            }
+            // Upload to Supabase storage
+            const uploadResult = await uploadMidiFile(file, user?.id || '', {
+                songName,
+                instrument,
+                noteCount
+            });
+
+            setResult(`Music generated and saved to your account!`);
 
         } catch (err: any) {
             setError(err.message || 'An error occurred');

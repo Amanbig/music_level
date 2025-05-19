@@ -35,6 +35,30 @@ const instruments: Instrument[] = [
         name: 'Flute',
         description: 'Melodic flute with bright, airy tones',
         image: '/instruments/flute.svg'
+    },
+    {
+        id: 'drums',
+        name: 'Drums',
+        description: 'Powerful drum kit with dynamic rhythms',
+        image: '/instruments/drums.svg'
+    },
+    {
+        id: 'trumpet',
+        name: 'Trumpet',
+        description: 'Brass trumpet with bold, vibrant sound',
+        image: '/instruments/trumpet.svg'
+    },
+    {
+        id: 'saxophone',
+        name: 'Saxophone',
+        description: 'Smooth saxophone with rich, soulful tones',
+        image: '/instruments/saxophone.svg'
+    },
+    {
+        id: 'cello',
+        name: 'Cello',
+        description: 'Deep cello with warm, resonant sound',
+        image: '/instruments/cello.svg'
     }
 ];
 
@@ -70,8 +94,8 @@ export default function InstrumentsPage() {
                         <div
                             key={instrument.id}
                             className={`p-6 rounded-lg border cursor-pointer transition-all hover:shadow-lg ${selectedInstrument === instrument.id
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-gray-200 hover:border-primary'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-200 hover:border-primary'
                                 }`}
                             onClick={() => handleInstrumentSelect(instrument.id)}
                         >
