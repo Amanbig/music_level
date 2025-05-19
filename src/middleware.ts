@@ -11,26 +11,32 @@ export function middleware(request: NextRequest) {
         '/',
         '/auth/login',
         '/auth/signup',
+        '/auth/callback',
         '/about',
     ].includes(path);
 
     // Check if the path is for the API
     const isApiPath = path.startsWith('/api/');
 
-    // Get the token from the cookies
-    const token = request.cookies.get('appwrite-session')?.value || '';
+    // Get the session token from cookies
+    const hasSession = request.cookies.has('access_token') && request.cookies.has('refresh_token');
+    console.log('Middleware - Path:', path);
+    console.log('Middleware - Has session:', hasSession);
 
     // If the path is public or an API route, allow access
     if (isPublicPath || isApiPath) {
+        console.log('Middleware - Allowing access to public path:', path);
         return NextResponse.next();
     }
 
-    // If there's no token and the path is not public, redirect to login
-    if (!token) {
+    // If there's no session and the path is not public, redirect to login
+    if (!hasSession) {
+        console.log('Middleware - No session found, redirecting to login');
         return NextResponse.redirect(new URL('/auth/login', request.url));
     }
 
     // Otherwise, allow access to protected routes
+    console.log('Middleware - Session found, allowing access to protected route:', path);
     return NextResponse.next();
 }
 

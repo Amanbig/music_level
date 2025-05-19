@@ -1,13 +1,10 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { appwriteAuth } from '@/lib/appwrite';
+import { supabaseAuth, supabase } from '@/lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
-type User = {
-    $id: string;
-    name: string;
-    email: string;
-} | null;
+type User = SupabaseUser | null;
 
 type AuthContextType = {
     user: User;
@@ -27,7 +24,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuthStatus = async () => {
         try {
             setLoading(true);
-            const currentUser = await appwriteAuth.getCurrentUser();
+            console.log('AuthContext - Checking auth status');
+            const currentUser = await supabaseAuth.getCurrentUser();
+            console.log('AuthContext - Current user:', currentUser);
             setUser(currentUser);
         } catch (error) {
             console.error('Error checking auth status:', error);
@@ -38,19 +37,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        // Initial auth check
         checkAuthStatus();
+
+        // Set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('AuthContext - Auth state changed:', event);
+            console.log('AuthContext - New session:', session);
+
+            if (session?.user) {
+                console.log('AuthContext - Setting user from session');
+                setUser(session.user);
+            } else {
+                console.log('AuthContext - No session user, setting null');
+                setUser(null);
+            }
+        });
+
+        // Cleanup subscription
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     const login = async (email: string, password: string) => {
         try {
             setLoading(true);
-            await appwriteAuth.login(email, password);
-            // Make sure we get the current user and set the state
-            const currentUser = await appwriteAuth.getCurrentUser();
-            if (!currentUser) {
+            console.log('AuthContext - Attempting login for:', email);
+            const result = await supabaseAuth.login(email, password);
+            if (!result.user) {
                 throw new Error('Failed to get user details after login');
             }
-            setUser(currentUser);
+            console.log('AuthContext - Login successful, user:', result.user);
+            setUser(result.user);
         } catch (error) {
             console.error('Login error:', error);
             throw error;
@@ -62,8 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signup = async (email: string, password: string, name: string) => {
         try {
             setLoading(true);
-            await appwriteAuth.createAccount(email, password, name);
-            await checkAuthStatus();
+            console.log('AuthContext - Creating account for:', email);
+            const result = await supabaseAuth.createAccount(email, password, name);
+            if (result.user) {
+                console.log('AuthContext - Account created, user:', result.user);
+                setUser(result.user);
+            } else {
+                console.log('AuthContext - No user after account creation, checking status');
+                await checkAuthStatus();
+            }
         } catch (error) {
             console.error('Signup error:', error);
             throw error;
@@ -75,7 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = async () => {
         try {
             setLoading(true);
-            await appwriteAuth.logout();
+            console.log('AuthContext - Logging out');
+            await supabaseAuth.logout();
             setUser(null);
         } catch (error) {
             console.error('Logout error:', error);

@@ -1,17 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { appwriteAuth } from '@/lib/appwrite';
+import { supabaseAuth } from '@/lib/supabase';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login, loading } = useAuth();
+    const { login, loading, user } = useAuth();
     const router = useRouter();
+
+    // Check if user is already logged in
+    useEffect(() => {
+        const checkAuth = async () => {
+            const isLoggedIn = await supabaseAuth.isLoggedIn();
+            console.log('Initial auth check - isLoggedIn:', isLoggedIn);
+            if (isLoggedIn) {
+                console.log('User already logged in, redirecting to dashboard');
+                window.location.href = '/dashboard';
+            }
+        };
+        checkAuth();
+    }, []);
+
+    // Watch for user changes
+    useEffect(() => {
+        console.log('User state changed:', user);
+        if (user) {
+            console.log('User detected in context, redirecting to dashboard');
+            window.location.href = '/dashboard';
+        }
+    }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,16 +45,21 @@ export default function LoginPage() {
         }
 
         try {
+            console.log('Attempting login...');
             await login(email, password);
-            // Wait for a brief moment to ensure auth state is updated
-            await new Promise(resolve => setTimeout(resolve, 100));
-            // Check if user is actually logged in before redirecting
-            if (await appwriteAuth.isLoggedIn()) {
-                router.push('/dashboard');
-            } else {
+            console.log('Login function completed successfully');
+
+            // The user effect above will handle the redirect if login is successful
+            // But we'll add a fallback check just in case
+            const isLoggedIn = await supabaseAuth.isLoggedIn();
+            console.log('Post-login check - isLoggedIn:', isLoggedIn);
+
+            if (!isLoggedIn) {
+                console.log('Login appeared successful but session not detected');
                 setError('Login successful but session not established. Please try again.');
             }
         } catch (err: any) {
+            console.error('Login error:', err);
             setError(err.message || 'Failed to login. Please check your credentials.');
         }
     };
@@ -91,19 +118,13 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="text-center mt-4">
-                    <p className="text-sm text-muted-foreground">
+                <div className="text-center text-sm">
+                    <p className="text-muted-foreground">
                         Don't have an account?{' '}
-                        <Link href="/auth/signup" className="text-primary hover:underline">
+                        <Link href="/auth/signup" className="text-foreground hover:underline">
                             Sign up
                         </Link>
                     </p>
-                </div>
-
-                <div className="mt-6 text-center">
-                    <Link href="/" className="text-sm text-muted-foreground hover:underline">
-                        ← Back to Home
-                    </Link>
                 </div>
             </div>
         </div>

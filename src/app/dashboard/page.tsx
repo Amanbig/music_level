@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { appwriteAuth } from '@/lib/appwrite';
+import { supabaseAuth } from '@/lib/supabase';
 import { getUserMidiFiles, getMidiFileDownloadUrl, deleteMidiFile } from '@/lib/storage';
 
 interface GeneratedTrack {
@@ -23,17 +23,23 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const checkAuth = async () => {
+            console.log('Dashboard - Initial loading state:', loading);
             // Wait for initial loading to complete
             if (loading) return;
 
             // Check if user is authenticated
-            const isLoggedIn = await appwriteAuth.isLoggedIn();
+            const isLoggedIn = await supabaseAuth.isLoggedIn();
+            console.log('Dashboard - isLoggedIn check result:', isLoggedIn);
+            console.log('Dashboard - Current user:', user);
 
             if (!isLoggedIn || !user) {
-                router.replace('/auth/login');
+                console.log('Dashboard - User not authenticated, redirecting to login');
+                // Use window.location for a hard navigation
+                window.location.href = '/auth/login';
                 return;
             }
 
+            console.log('Dashboard - User is authenticated, fetching tracks');
             // Fetch user's tracks when authenticated
             fetchUserTracks();
         };
@@ -46,16 +52,18 @@ export default function DashboardPage() {
         try {
             if (!user) return;
 
-            // Fetch files from Appwrite storage using our storage utility
-            const files = await getUserMidiFiles(user.$id);
+            console.log('Dashboard - Fetching tracks for user:', user.id);
+            // Fetch files from Supabase storage using our storage utility
+            const files = await getUserMidiFiles(user.id);
+            console.log('Dashboard - Fetched files:', files);
 
             // Transform files into track format
             const userTracks = files.files.map(file => ({
-                id: file.$id,
+                id: file.id,
                 name: file.name.replace('.mid', ''),
-                date: new Date(file.$createdAt).toLocaleDateString(),
-                notes: file.$metadata?.noteCount || 0,
-                fileId: file.$id
+                date: new Date(file.created_at).toLocaleDateString(),
+                notes: file.metadata?.noteCount || 0,
+                fileId: file.id
             }));
 
             setTracks(userTracks);
@@ -68,8 +76,8 @@ export default function DashboardPage() {
 
     const handleDownload = async (track: GeneratedTrack) => {
         try {
-            const file = await getMidiFileDownloadUrl(track.fileId!);
-            window.open(file.href, '_blank');
+            const file = await getMidiFileDownloadUrl(user?.id!,track.name);
+            window.open(file, '_blank');
         } catch (error) {
             console.error('Error downloading track:', error);
             alert('Failed to download track');
@@ -78,7 +86,7 @@ export default function DashboardPage() {
 
     const handleDelete = async (trackId: string) => {
         try {
-            await deleteMidiFile(trackId);
+            await deleteMidiFile(user?.id!,trackId);
             setTracks(tracks.filter(t => t.id !== trackId));
         } catch (error) {
             console.error('Error deleting track:', error);

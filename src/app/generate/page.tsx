@@ -53,7 +53,7 @@ export default function GeneratePage() {
                     songName,
                     extra,
                     instrument,
-                    userId: user?.$id // Include user ID for tracking
+                    userId: user?.id // Include user ID for tracking
                 }),
             });
 
@@ -98,7 +98,7 @@ export default function GeneratePage() {
             const file = new File([blob], `${songName || 'generated'}_melody.mid`, { type: 'audio/midi' });
 
             // Upload to Appwrite storage with metadata
-            await uploadMidiFile(file, user!.$id, {
+            await uploadMidiFile(file, user!.id, {
                 songName: songName || 'Untitled Melody',
                 instrument: instrument || 'piano',
                 extra: extra || '',
