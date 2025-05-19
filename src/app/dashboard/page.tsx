@@ -64,7 +64,23 @@ export default function DashboardPage() {
         try {
             setError('');
             const url = await getMidiFileDownloadUrl(user!.id, track.fileName);
-            window.open(url, '_blank');
+
+            // Fetch the file from the signed URL
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Failed to fetch MIDI file');
+            }
+            const blob = await response.blob();
+
+            // Create a download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `${track.name}.mid`; // Ensure .mid extension
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
         } catch (error: any) {
             console.error('Error downloading track:', error);
             setError('Failed to download track: ' + (error.message || 'Unknown error'));
@@ -311,7 +327,7 @@ export default function DashboardPage() {
                         <div className="space-y-3">
                             {[
                                 { href: '/', text: 'Back to Home' },
-                                { href: '/generate', text: 'Generate New Music' },
+                                { href: '/instruments', text: 'Generate New Music' },
                                 { href: '/about', text: 'About This Project' },
                                 { href: '/profile', text: 'Your Profile' },
                             ].map((link) => (

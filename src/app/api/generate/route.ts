@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Midi } from '@tonejs/midi';
-import { writeFile } from 'fs/promises';
+import { supabaseAuth } from '@/lib/supabase'; // Assuming Supabase for auth
 
 // Interface for note structure
 interface Note {
@@ -13,37 +13,62 @@ interface Note {
 // POST endpoint handler
 export async function POST(req: Request) {
     try {
+
+        const user = await supabaseAuth.getCurrentUser();
+
         const body = await req.json();
-        const songName = body.songName || ''; // Add song name parameter
+        const songName = body.songName || '';
         const extra = body.extra || '';
         const instrument = body.instrument || 'piano';
-        // Validate instrument against supported list
+        const userId = body.userId || user?.id;
+
+        // Validate instrument
         const supportedInstruments = ['piano', 'guitar', 'violin', 'flute', 'drums', 'trumpet', 'saxophone', 'cello'];
         if (!supportedInstruments.includes(instrument)) {
-            throw new Error(`Unsupported instrument: ${instrument}. Please choose from: ${supportedInstruments.join(', ')}`);
+            return new Response(
+                `Invalid instrument: ${instrument}. Supported instruments: ${supportedInstruments.join(', ')}`,
+                {
+                    status: 400,
+                    headers: { 'Content-Type': 'text/plain' },
+                }
+            );
         }
-        const userId = body.userId || '';
 
-        // Log the request for debugging
-        console.log(`Generating music: ${songName}, instrument: ${instrument}, userId: ${userId}`);
+        // Validate environment variable
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error('Server configuration error: Missing Gemini API key');
+        }
 
         const notes = await getAIResponse(songName, extra, instrument);
-        await saveNotesAsMidi(notes, 'output.mid', instrument);
+        const midiBuffer = await saveNotesAsMidi(notes, instrument);
 
-        return new Response(JSON.stringify({
-            message: `MIDI file saved with ${notes.length} notes for "${songName || 'custom melody'}".`,
-            noteCount: notes.length,
-            instrument: instrument
-        }), {
-            headers: { 'Content-Type': 'application/json' },
-            status: 200
-        });
+        return new Response(
+            JSON.stringify({
+                message: `MIDI file generated with ${notes.length} notes for "${songName || 'custom melody'}".`,
+                noteCount: notes.length,
+                instrument,
+                midiFile: midiBuffer.toString('base64'), // Return MIDI as base64
+            }),
+            {
+                headers: { 'Content-Type': 'application/json' },
+                status: 200,
+            }
+        );
     } catch (error: any) {
-        console.error('Error:', error);
-        return new Response(`Error: ${error.message}`, {
-            status: 500,
-            headers: { 'Content-Type': 'text/plain' }
+        console.error('API Error:', {
+            message: error.message,
+            stack: error.stack,
+            status: error.response?.status,
         });
+        return new Response(
+            JSON.stringify({
+                error: error.message || 'Failed to generate music',
+            }),
+            {
+                status: error.status || 500,
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
     }
 }
 
@@ -145,21 +170,20 @@ Return only a valid JSON array of note objects, no additional text or code block
     }
 }
 
-// Function to save structured note data as a MIDI file
-async function saveNotesAsMidi(notes: Note[], filePath: string, instrument: string = 'piano') {
+// Function to generate MIDI buffer from notes
+async function saveNotesAsMidi(notes: Note[], instrument: string = 'piano'): Promise<Buffer> {
     const midi = new Midi();
     const track = midi.addTrack();
 
-    // Set instrument number based on selected instrument
     const instrumentNumbers: Record<string, number> = {
-        'piano': 0,      // Acoustic Grand Piano
-        'guitar': 24,    // Acoustic Guitar (nylon)
-        'violin': 40,    // Violin
-        'flute': 73,     // Flute
-        'drums': 118,    // Synth Drum
-        'trumpet': 56,   // Trumpet
-        'saxophone': 66, // Alto Sax
-        'cello': 42      // Cello
+        piano: 0, // Acoustic Grand Piano
+        guitar: 24, // Acoustic Guitar (nylon)
+        violin: 40, // Violin
+        flute: 73, // Flute
+        drums: 118, // Synth Drum
+        trumpet: 56, // Trumpet
+        saxophone: 66, // Alto Sax
+        cello: 42, // Cello
     };
 
     track.instrument.number = instrumentNumbers[instrument] || 0;
@@ -170,13 +194,12 @@ async function saveNotesAsMidi(notes: Note[], filePath: string, instrument: stri
                 name: note.note,
                 time: note.time,
                 duration: note.duration,
-                velocity: note.velocity
+                velocity: note.velocity,
             });
         } catch (error) {
             console.warn(`Skipping invalid note: ${JSON.stringify(note)}`);
         }
     }
 
-    const data = Buffer.from(midi.toArray());
-    await writeFile(filePath, data);
+    return Buffer.from(midi.toArray());
 }

@@ -1,39 +1,7 @@
-import Error from 'next/error';
 import { supabase } from './supabase';
 
 // Define storage bucket for MIDI files
 const MIDI_BUCKET_NAME = 'midi-files';
-
-// SQL for required storage policies:
-/*
--- Allow authenticated users to upload files
-CREATE POLICY "Users can upload files"
-ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'midi-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Allow users to read their own files
-CREATE POLICY "Users can read own files"
-ON storage.objects
-FOR SELECT
-TO authenticated
-USING (bucket_id = 'midi-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Allow users to update their own files
-CREATE POLICY "Users can update own files"
-ON storage.objects
-FOR UPDATE
-TO authenticated
-USING (bucket_id = 'midi-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Allow users to delete their own files
-CREATE POLICY "Users can delete own files"
-ON storage.objects
-FOR DELETE
-TO authenticated
-USING (bucket_id = 'midi-files' AND auth.uid()::text = (storage.foldername(name))[1]);
-*/
 
 // Ensure bucket exists and is properly configured
 const ensureBucketExists = async () => {
@@ -52,59 +20,73 @@ const ensureBucketExists = async () => {
 
 /**
  * Upload a MIDI file to Supabase storage
- * @param file The file to upload
+ * @param midiBuffer The MIDI file data as a Buffer or ArrayBuffer
  * @param userId The ID of the user who owns the file
+ * @param fileName The desired file name (without path)
  * @param metadata Additional metadata for the file
  * @returns The uploaded file data
  */
-export const uploadMidiFile = async (file: File, userId: string, metadata: any = {}) => {
+export const uploadMidiFile = async (
+    midiBuffer: Buffer | ArrayBuffer,
+    userId: string,
+    fileName: string,
+    metadata: any = {}
+) => {
     try {
         // Ensure bucket exists before upload
         await ensureBucketExists();
 
         // Create a unique file name
-        const fileName = `${Date.now()}_${file.name}`;
+        const uniqueFileName = `${Date.now()}_${fileName}.mid`;
 
         // Combine user ID with metadata
         const fileMetadata = {
             userId,
-            fileName: file.name,
-            fileSize: file.size,
-            mimeType: file.type,
+            fileName,
+            fileSize: midiBuffer.byteLength,
+            mimeType: 'audio/midi',
             createdAt: new Date().toISOString(),
-            ...metadata
+            ...metadata,
         };
 
-        // Create a path that includes the user ID for better organization and permissions
-        const filePath = `${userId}/${fileName}`;
+        // Create a path that includes the user ID
+        const filePath = `${userId}/${uniqueFileName}`;
 
         console.log('Attempting to upload file:', {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
+            fileName: uniqueFileName,
+            fileSize: midiBuffer.byteLength,
             userId,
-            bucket: MIDI_BUCKET_NAME
+            bucket: MIDI_BUCKET_NAME,
         });
 
         // Verify authenticated user
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+        if (!user || user.id !== userId) {
+            throw new Error('User authentication mismatch');
+        }
+
+        // Basic validation: Check if the buffer starts with MIDI header (MThd)
+        const bufferView = new Uint8Array(midiBuffer);
+        const midiHeader = String.fromCharCode(...bufferView.slice(0, 4));
+        if (midiHeader !== 'MThd') {
+            throw new Error('Invalid MIDI file: Missing MThd header');
+        }
 
         // Upload file to Supabase storage
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
-            .upload(filePath, file, {
+            .upload(filePath, midiBuffer, {
                 upsert: true,
                 contentType: 'audio/midi',
                 cacheControl: '3600',
-                metadata: fileMetadata
+                metadata: fileMetadata,
             });
 
         if (error) {
             console.error('Storage upload error:', {
                 message: error.message,
                 filePath,
-                userId
+                userId,
             });
             throw error;
         }
@@ -112,13 +94,12 @@ export const uploadMidiFile = async (file: File, userId: string, metadata: any =
         console.log('File uploaded successfully:', {
             path: data?.path,
             userId,
-            fileName: file.name
+            fileName: uniqueFileName,
         });
 
-        // Return the file data with metadata
         return {
             ...data,
-            metadata: fileMetadata
+            metadata: fileMetadata,
         };
     } catch (error) {
         console.error('Error uploading MIDI file:', error);
@@ -137,19 +118,21 @@ export const getUserMidiFiles = async (userId: string) => {
 
         // Verify authenticated user
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+        if (!user || user.id !== userId) {
+            throw new Error('User authentication mismatch');
+        }
 
         // List files in the user's directory
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
             .list(userId, {
-                sortBy: { column: 'created_at', order: 'desc' }
+                sortBy: { column: 'created_at', order: 'desc' },
             });
 
         if (error) {
             console.error('Storage list error:', {
                 message: error.message,
-                userId
+                userId,
             });
             throw error;
         }
@@ -157,12 +140,12 @@ export const getUserMidiFiles = async (userId: string) => {
         console.log('Files retrieved successfully:', {
             userId,
             fileCount: data.length,
-            files: data.map(f => ({ name: f.name, id: f.id, created_at: f.created_at }))
+            files: data.map((f) => ({ name: f.name, id: f.id, created_at: f.created_at })),
         });
 
         return {
             total: data.length,
-            files: data
+            files: data,
         };
     } catch (error) {
         console.error('Error getting user MIDI files:', error);
@@ -183,7 +166,9 @@ export const getMidiFileDownloadUrl = async (userId: string, fileName: string) =
 
         // Verify authenticated user
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+        if (!user || user.id !== userId) {
+            throw new Error('User authentication mismatch');
+        }
 
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
@@ -193,7 +178,7 @@ export const getMidiFileDownloadUrl = async (userId: string, fileName: string) =
             console.error('Storage signed URL error:', {
                 message: error.message,
                 filePath,
-                userId
+                userId,
             });
             throw error;
         }
@@ -219,7 +204,9 @@ export const deleteMidiFile = async (userId: string, fileName: string) => {
 
         // Verify authenticated user
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+        if (!user || user.id !== userId) {
+            throw new Error('User authentication mismatch');
+        }
 
         const { error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
@@ -229,7 +216,7 @@ export const deleteMidiFile = async (userId: string, fileName: string) => {
             console.error('Storage delete error:', {
                 message: error.message,
                 filePath,
-                userId
+                userId,
             });
             throw error;
         }
@@ -246,5 +233,5 @@ export default {
     uploadMidiFile,
     getUserMidiFiles,
     getMidiFileDownloadUrl,
-    deleteMidiFile
+    deleteMidiFile,
 };
