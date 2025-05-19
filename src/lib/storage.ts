@@ -62,14 +62,6 @@ export const uploadMidiFile = async (file: File, userId: string, metadata: any =
         // Ensure bucket exists before upload
         await ensureBucketExists();
 
-        // Validate file type and size
-        // if (!file.type.includes('midi')) {
-        //     throw new Error('Invalid file type. Only MIDI files are allowed.');
-        // }
-
-        // if (file.size > 10485760) { // 10MB
-        //     throw new Error('File size exceeds limit of 10MB.');
-        // }
         // Create a unique file name
         const fileName = `${Date.now()}_${file.name}`;
 
@@ -94,11 +86,15 @@ export const uploadMidiFile = async (file: File, userId: string, metadata: any =
             bucket: MIDI_BUCKET_NAME
         });
 
+        // Verify authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+
         // Upload file to Supabase storage
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
             .upload(filePath, file, {
-                upsert: true, // Allow overwriting existing files
+                upsert: true,
                 contentType: 'audio/midi',
                 cacheControl: '3600',
                 metadata: fileMetadata
@@ -137,6 +133,12 @@ export const uploadMidiFile = async (file: File, userId: string, metadata: any =
  */
 export const getUserMidiFiles = async (userId: string) => {
     try {
+        console.log('Attempting to list files for:', { bucket: MIDI_BUCKET_NAME, userId });
+
+        // Verify authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Authenticated user ID:', user?.id, 'Provided userId:', userId);
+
         // List files in the user's directory
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
@@ -154,7 +156,8 @@ export const getUserMidiFiles = async (userId: string) => {
 
         console.log('Files retrieved successfully:', {
             userId,
-            fileCount: data.length
+            fileCount: data.length,
+            files: data.map(f => ({ name: f.name, id: f.id, created_at: f.created_at }))
         });
 
         return {
@@ -184,7 +187,7 @@ export const getMidiFileDownloadUrl = async (userId: string, fileName: string) =
 
         const { data, error } = await supabase.storage
             .from(MIDI_BUCKET_NAME)
-            .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+            .createSignedUrl(filePath, 3600);
 
         if (error) {
             console.error('Storage signed URL error:', {
