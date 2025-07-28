@@ -8,5 +8,6 @@ export default registerAs('appwrite', () => ({
   userCollectionId: process.env.APPWRITE_USER_COLLECTION_ID || 'users',
   filesCollectionId: process.env.APPWRITE_FILES_COLLECTION_ID || 'files',
   sharesCollectionId: process.env.APPWRITE_SHARES_COLLECTION_ID || 'shares',
+  generationsCollectionId: process.env.APPWRITE_GENERATIONS_COLLECTION_ID || 'generations',
   bucketId: process.env.APPWRITE_BUCKET_ID || ''
 }));

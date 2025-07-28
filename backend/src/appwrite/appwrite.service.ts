@@ -14,7 +14,7 @@ export class AppwriteService {
     public databaseId: string;
     private userCollectionId: string;
     private filesCollectionId: string;
-    private bucketId: string;
+    public bucketId: string;
     public storage: Storage;
 
     constructor(private configService: ConfigService) {
@@ -339,6 +339,32 @@ export class AppwriteService {
         } catch (error) {
             this.logger.error('Error deleting file:', error);
             throw new BadRequestException('Failed to delete file');
+        }
+    }
+
+    async downloadFile(fileId: string): Promise<any> {
+        try {
+            const result = await this.storage.getFileDownload(
+                this.bucketId,
+                fileId
+            );
+            return result;
+        } catch (error) {
+            this.logger.error('Error downloading file:', error);
+            throw new BadRequestException('Failed to download file');
+        }
+    }
+
+    async getFilePreview(fileId: string): Promise<any> {
+        try {
+            const result = await this.storage.getFilePreview(
+                this.bucketId,
+                fileId
+            );
+            return result;
+        } catch (error) {
+            this.logger.error('Error getting file preview:', error);
+            throw new BadRequestException('Failed to get file preview');
         }
     }
 }
