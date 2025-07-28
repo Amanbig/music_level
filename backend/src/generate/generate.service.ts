@@ -236,7 +236,13 @@ export class GenerateService {
         }
 
         try {
-            const response = await this.geminiService.generateAI(prompt);
+            const response = await this.geminiService.generateAI(prompt) as {
+                choices?: Array<{
+                    message?: {
+                        content?: string;
+                    };
+                }>;
+            };
             
 
             // Parse the response safely
