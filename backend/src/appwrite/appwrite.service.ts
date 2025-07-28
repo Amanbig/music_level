@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { Account, Client, Databases, ID, Query, Users, Storage } from "node-appwrite";
 import { AppwriteUser, CreateUserDto, LoginDto } from './UserDto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppwriteService {
@@ -16,10 +17,26 @@ export class AppwriteService {
     private bucketId: string;
     public storage: Storage;
 
-    constructor(){
-        this.client = new Client().setEndpoint(process.env.APPWRITE_ENDPOINT || 'http://localhost/v1')
-            .setProject(process.env.APPWRITE_PROJECT_ID || 'your_project_id')
-            .setKey(process.env.APPWRITE_API_KEY || 'your_api_key');
+    constructor(private configService: ConfigService) {
+        this.projectId = this.configService.get<string>('appwrite.projectId') || 'projectId';
+        this.databaseId = this.configService.get<string>('appwrite.databaseId') || 'main';
+        this.userCollectionId = this.configService.get<string>(
+            'appwrite.userCollectionId',
+        ) || 'users';
+        this.filesCollectionId = this.configService.get<string>(
+            'appwrite.filesCollectionId',
+        ) || 'files';
+
+        this.bucketId = this.configService.get<string>(
+            'appwrite.bucketId',
+        ) || ''
+
+        // console.log(this.projectId)
+
+        this.client = new Client()
+            .setEndpoint(this.configService.get<string>('appwrite.endpoint') || 'https://cloud.appwrite.io/v1')
+            .setProject(this.projectId)
+            .setKey(this.configService.get<string>('appwrite.apiKey') || '');
 
         this.account = new Account(this.client);
         this.databases = new Databases(this.client);
