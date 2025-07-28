@@ -236,17 +236,10 @@ export class GenerateService {
         }
 
         try {
-            const response = await this.geminiService.generateAI(prompt) as {
-                choices?: Array<{
-                    message?: {
-                        content?: string;
-                    };
-                }>;
-            };
+            const response = await this.geminiService.generateAI(prompt) as { data?: { text?: string } };
             
-
             // Parse the response safely
-            var content = response?.choices?.[0]?.message?.content || '';
+            let content = response.data?.text || '';
             if (!content) {
                 throw new Error('No content in AI response');
             }
