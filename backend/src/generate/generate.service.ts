@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Midi } from '@tonejs/midi';
 import { Note } from './noteDto';
-import axios from 'axios';
 import { GeminiService } from 'src/gemini/gemini.service';
 
 @Injectable()
