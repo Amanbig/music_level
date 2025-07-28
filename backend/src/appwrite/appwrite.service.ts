@@ -8,10 +8,10 @@ export class AppwriteService {
     private readonly logger = new Logger(AppwriteService.name);
     private client: Client;
     private account: Account;
-    private databases: Databases;
+    public databases: Databases;
     private users: Users;
     private projectId: string;
-    private databaseId: string;
+    public databaseId: string;
     private userCollectionId: string;
     private filesCollectionId: string;
     private bucketId: string;

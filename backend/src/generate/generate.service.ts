@@ -1,21 +1,134 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Midi } from '@tonejs/midi';
 import { Note } from './noteDto';
 import { GeminiService } from 'src/gemini/gemini.service';
+import { AppwriteService } from 'src/appwrite/appwrite.service';
+import { GenerationRequestDto, SaveGenerationDto, GenerationResponse } from './dto/generation.dto';
+import { ID, Query } from 'node-appwrite';
 
 @Injectable()
 export class GenerateService {
+    private readonly logger = new Logger(GenerateService.name);
+    private readonly generationsCollectionId = 'generations'; // Add this to your Appwrite config
 
-    constructor(private geminiService: GeminiService) {} 
+    constructor(
+        private geminiService: GeminiService,
+        private appwriteService: AppwriteService
+    ) {} 
+
+    // Function to save a generation to Appwrite
+    async saveGeneration(saveDto: SaveGenerationDto): Promise<GenerationResponse> {
+        try {
+            const document = await this.appwriteService.databases.createDocument(
+                this.appwriteService.databaseId,
+                this.generationsCollectionId,
+                ID.unique(),
+                {
+                    name: saveDto.name,
+                    notes: saveDto.notes,
+                    description: saveDto.description || '',
+                    userId: saveDto.userId,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                }
+            );
+
+            return {
+                id: document.$id,
+                name: document.name,
+                notes: document.notes,
+                description: document.description,
+                userId: document.userId,
+                createdAt: document.createdAt,
+                updatedAt: document.updatedAt,
+            };
+        } catch (error) {
+            this.logger.error('Error saving generation:', error);
+            throw new Error('Failed to save generation');
+        }
+    }
+
+    // Function to get a user's generations
+    async getUserGenerations(userId: string): Promise<GenerationResponse[]> {
+        try {
+            const response = await this.appwriteService.databases.listDocuments(
+                this.appwriteService.databaseId,
+                this.generationsCollectionId,
+                [Query.equal('userId', userId), Query.orderDesc('createdAt')]
+            );
+
+            return response.documents.map(doc => ({
+                id: doc.$id,
+                name: doc.name,
+                notes: doc.notes,
+                description: doc.description,
+                userId: doc.userId,
+                createdAt: doc.createdAt,
+                updatedAt: doc.updatedAt,
+            }));
+        } catch (error) {
+            this.logger.error('Error getting user generations:', error);
+            throw new Error('Failed to get user generations');
+        }
+    }
+
+    // Function to get a specific generation
+    async getGeneration(generationId: string): Promise<GenerationResponse> {
+        try {
+            const document = await this.appwriteService.databases.getDocument(
+                this.appwriteService.databaseId,
+                this.generationsCollectionId,
+                generationId
+            );
+
+            return {
+                id: document.$id,
+                name: document.name,
+                notes: document.notes,
+                description: document.description,
+                userId: document.userId,
+                createdAt: document.createdAt,
+                updatedAt: document.updatedAt,
+            };
+        } catch (error) {
+            this.logger.error(`Error getting generation ${generationId}:`, error);
+            throw new NotFoundException('Generation not found');
+        }
+    }
+
+    // Function to delete a generation
+    async deleteGeneration(generationId: string, userId: string): Promise<void> {
+        try {
+            const document = await this.appwriteService.databases.getDocument(
+                this.appwriteService.databaseId,
+                this.generationsCollectionId,
+                generationId
+            );
+
+            if (document.userId !== userId) {
+                throw new Error('Unauthorized');
+            }
+
+            await this.appwriteService.databases.deleteDocument(
+                this.appwriteService.databaseId,
+                this.generationsCollectionId,
+                generationId
+            );
+        } catch (error) {
+            this.logger.error(`Error deleting generation ${generationId}:`, error);
+            throw new Error('Failed to delete generation');
+        }
+    }
 
     // Function to get structured note data from Gemini with song reference
-    async getAIResponse(songName: string, extra: string, instrument: string = 'piano'): Promise<Note[]> {
+    async getAIResponse(dto: GenerationRequestDto): Promise<Note[]> {
         let prompt;
+        const instrument = dto.instrument || 'piano';
 
-        if (songName) {
+        if (dto.songName) {
             // Prompt for recreating an existing song
             prompt = `
-        Generate a JSON array of objects representing ${instrument} notes for an accurate ${instrument} transcription of "${songName}".
+        Generate a JSON array of objects representing ${instrument} notes for an accurate ${instrument} transcription of "${dto.songName}".
         Focus on the main melody and basic chord structure of the song.
 
         Each object must include:
@@ -25,11 +138,11 @@ export class GenerateService {
         - "velocity": volume (0.5 to 1.0)
 
         Requirements:
-        - Match the actual notes, key signature, and tempo of "${songName}" as accurately as possible
+        - Match the actual notes, key signature, and tempo of "${dto.songName}" as accurately as possible
         - Include both melody and basic accompaniment/chords
         - Start at time 0 and increment times sequentially
         - Aim for at least 16 bars of music to capture the recognizable part of the song
-        - ${extra}
+        ${dto.extra ? `- ${dto.extra}` : ''}
 
         Return only a valid JSON array of note objects, no additional text or code blocks.
         `;
@@ -47,7 +160,7 @@ export class GenerateService {
         - Ensure rhythmic coherence (use common note durations: quarter=0.5s, eighth=0.25s, half=1.0s)
         - Maintain musical flow (avoid large pitch jumps, use stepwise motion or small intervals)
         - Start at time 0 and increment times sequentially
-        - ${extra}
+        ${dto.extra ? `- ${dto.extra}` : ''}
 
         Return only a valid JSON array of note objects, no additional text or code blocks.
         `;
