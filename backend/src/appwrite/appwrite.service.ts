@@ -14,7 +14,7 @@ export class AppwriteService {
     public databaseId: string;
     private userCollectionId: string;
     private filesCollectionId: string;
-    private bucketId: string;
+    public bucketId: string;
     public storage: Storage;
 
     constructor(private configService: ConfigService) {

@@ -16,9 +16,31 @@ export class GenerateService {
         private appwriteService: AppwriteService
     ) {} 
 
-    // Function to save a generation to Appwrite
+    // Function to save a generation with MIDI to Appwrite
     async saveGeneration(saveDto: SaveGenerationDto): Promise<GenerationResponse> {
         try {
+            // Generate MIDI file
+            const { buffer, midiData } = await this.saveNotesAsMidi(saveDto.notes, saveDto.instrument || 'piano');
+
+            // Create file in Appwrite Storage
+            const fileId = ID.unique();
+            const fileName = `${saveDto.name.replace(/[^a-zA-Z0-9]/g, '_')}.mid`;
+            
+            // Create a File-like object from the buffer
+            const fileBlob = new Blob([buffer], { type: 'audio/midi' });
+            const fileObject = new File([fileBlob], fileName, {
+                type: 'audio/midi',
+                lastModified: Date.now()
+            });
+
+            // Upload MIDI file
+            await this.appwriteService.storage.createFile(
+                this.appwriteService.bucketId,
+                fileId,
+                fileObject
+            );
+
+            // Create document in database
             const document = await this.appwriteService.databases.createDocument(
                 this.appwriteService.databaseId,
                 this.generationsCollectionId,
@@ -26,8 +48,11 @@ export class GenerateService {
                 {
                     name: saveDto.name,
                     notes: saveDto.notes,
+                    midiData: midiData,
+                    fileId: fileId,
                     description: saveDto.description || '',
                     userId: saveDto.userId,
+                    instrument: saveDto.instrument || 'piano',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 }
@@ -204,36 +229,59 @@ export class GenerateService {
     }
 
     // Function to generate MIDI buffer from notes
-    async saveNotesAsMidi(notes: Note[], instrument: string = 'piano'): Promise<Buffer> {
-        const midi = new Midi();
-        const track = midi.addTrack();
+    async saveNotesAsMidi(notes: Note[], instrument: string = 'piano'): Promise<{ buffer: Buffer; midiData: any }> {
+        try {
+            const midi = new Midi();
+            const track = midi.addTrack();
 
-        const instrumentNumbers: Record<string, number> = {
-            piano: 0, // Acoustic Grand Piano
-            guitar: 24, // Acoustic Guitar (nylon)
-            violin: 40, // Violin
-            flute: 73, // Flute
-            drums: 118, // Synth Drum
-            trumpet: 56, // Trumpet
-            saxophone: 66, // Alto Sax
-            cello: 42, // Cello
-        };
+            const instrumentNumbers: Record<string, number> = {
+                piano: 0, // Acoustic Grand Piano
+                guitar: 24, // Acoustic Guitar (nylon)
+                violin: 40, // Violin
+                flute: 73, // Flute
+                drums: 118, // Synth Drum
+                trumpet: 56, // Trumpet
+                saxophone: 66, // Alto Sax
+                cello: 42, // Cello
+                // Add more instruments as needed
+            };
 
-        track.instrument.number = instrumentNumbers[instrument] || 0;
+            // Set the instrument using the instrument property
+            track.instrument.number = instrumentNumbers[instrument.toLowerCase()] || 0;
 
-        for (const note of notes) {
-            try {
+            // Add notes to track
+            notes.forEach(note => {
                 track.addNote({
                     name: note.note,
                     time: note.time,
                     duration: note.duration,
-                    velocity: note.velocity,
+                    velocity: note.velocity
                 });
-            } catch (error) {
-                console.warn(`Skipping invalid note: ${JSON.stringify(note)}`);
-            }
-        }
+            });
 
-        return Buffer.from(midi.toArray());
+            // Get MIDI data for storage
+            const midiData = {
+                duration: midi.duration,
+                instrument: instrument,
+                notes: notes,
+                tracks: midi.tracks.map(track => ({
+                    instrument: track.instrument.number,
+                    notes: track.notes.map(note => ({
+                        name: note.name,
+                        time: note.time,
+                        duration: note.duration,
+                        velocity: note.velocity
+                    }))
+                }))
+            };
+
+            return {
+                buffer: Buffer.from(midi.toArray()),
+                midiData
+            };
+        } catch (error) {
+            this.logger.error('Error generating MIDI:', error);
+            throw new Error('Failed to generate MIDI file: ' + error.message);
+        }
     }
 }

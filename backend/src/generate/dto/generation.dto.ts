@@ -29,6 +29,10 @@ export class SaveGenerationDto {
     @IsString()
     @IsNotEmpty()
     userId: string;
+
+    @IsOptional()
+    @IsString()
+    instrument?: string;
 }
 
 export interface GenerationResponse {
