@@ -39,8 +39,11 @@ export interface GenerationResponse {
     id: string;
     name: string;
     notes: any[];
+    midiData?: any;
+    fileId?: string;
     description?: string;
     userId: string;
+    instrument?: string;
     createdAt: string;
     updatedAt: string;
 }

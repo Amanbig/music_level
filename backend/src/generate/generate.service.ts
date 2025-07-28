@@ -5,16 +5,60 @@ import { GeminiService } from 'src/gemini/gemini.service';
 import { AppwriteService } from 'src/appwrite/appwrite.service';
 import { GenerationRequestDto, SaveGenerationDto, GenerationResponse } from './dto/generation.dto';
 import { ID, Query } from 'node-appwrite';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GenerateService {
     private readonly logger = new Logger(GenerateService.name);
-    private readonly generationsCollectionId = 'generations'; // Add this to your Appwrite config
+    private readonly generationsCollectionId: string;
 
     constructor(
         private geminiService: GeminiService,
-        private appwriteService: AppwriteService
-    ) {} 
+        private appwriteService: AppwriteService,
+        private configService: ConfigService,
+    ) {
+        this.generationsCollectionId = this.configService.get<string>('appwrite.generationsCollectionId') || 'generations';
+    }
+
+    // Batch save multiple generations
+    async saveBatchGenerations(saveDtos: SaveGenerationDto[]): Promise<GenerationResponse[]> {
+        const results: GenerationResponse[] = [];
+        const errors: any[] = [];
+
+        for (const dto of saveDtos) {
+            try {
+                const result = await this.saveGeneration(dto);
+                results.push(result);
+            } catch (error) {
+                errors.push({ dto, error: error.message });
+                this.logger.error(`Error saving generation ${dto.name}:`, error);
+            }
+        }
+
+        if (errors.length > 0) {
+            this.logger.warn(`Batch save completed with ${errors.length} errors:`, errors);
+        }
+
+        return results;
+    }
+
+    // Batch delete multiple generations
+    async deleteBatchGenerations(generationIds: string[], userId: string): Promise<{ success: string[]; failed: string[] }> {
+        const success: string[] = [];
+        const failed: string[] = [];
+
+        for (const id of generationIds) {
+            try {
+                await this.deleteGeneration(id, userId);
+                success.push(id);
+            } catch (error) {
+                failed.push(id);
+                this.logger.error(`Error deleting generation ${id}:`, error);
+            }
+        }
+
+        return { success, failed };
+    }
 
     // Function to save a generation with MIDI to Appwrite
     async saveGeneration(saveDto: SaveGenerationDto): Promise<GenerationResponse> {
