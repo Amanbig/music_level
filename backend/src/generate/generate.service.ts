@@ -2,9 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Midi } from '@tonejs/midi';
 import { Note } from './noteDto';
 import axios from 'axios';
+import { GeminiService } from 'src/gemini/gemini.service';
 
 @Injectable()
 export class GenerateService {
+
+    constructor(private geminiService: GeminiService) {} 
 
     // Function to get structured note data from Gemini with song reference
     async getAIResponse(songName: string, extra: string, instrument: string = 'piano'): Promise<Note[]> {
@@ -52,27 +55,11 @@ export class GenerateService {
         }
 
         try {
-            const response = await axios.post(
-                'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-                {
-                    model: 'gemini-2.0-flash',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt,
-                        },
-                    ],
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,
-                    },
-                }
-            );
+            const response = await this.geminiService.generateAI(prompt);
+            
 
             // Parse the response safely
-            var content = response.data?.choices?.[0]?.message?.content || '';
+            var content = response?.choices?.[0]?.message?.content || '';
             if (!content) {
                 throw new Error('No content in AI response');
             }
