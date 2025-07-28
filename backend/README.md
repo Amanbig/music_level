@@ -1,98 +1,279 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Music Level Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS backend service that generates music using AI (Google's Gemini), converts it to MIDI, and manages user data with Appwrite.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- 🎵 AI-powered music generation
+- 🎹 MIDI file generation and conversion
+- 🔐 User authentication and authorization
+- 💾 File storage and management
+- 🚀 RESTful API endpoints
+- 🎼 Support for multiple instruments
+- 📦 Batch operations support
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Prerequisites
 
-## Project setup
+- Node.js (v16 or higher)
+- Appwrite Instance
+- Google Gemini API Key
+- npm or yarn
 
+## Setup
+
+1. Clone the repository:
 ```bash
-$ npm install
+git clone https://github.com/Amanbig/music_level.git
+cd music_level/backend
 ```
 
-## Compile and run the project
-
+2. Install dependencies:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+3. Set up environment variables in `.env`:
+```env
+# Appwrite Configuration
+APPWRITE_ENDPOINT=https://your-appwrite-instance/v1
+APPWRITE_PROJECT_ID=your-project-id
+APPWRITE_API_KEY=your-api-key
+APPWRITE_DATABASE_ID=your-database-id
+APPWRITE_USER_COLLECTION_ID=users
+APPWRITE_FILES_COLLECTION_ID=files
+APPWRITE_GENERATIONS_COLLECTION_ID=generations
+APPWRITE_BUCKET_ID=your-bucket-id
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Gemini AI Configuration
+GEMINI_API_URL=https://generativeai.googleapis.com/v1/models/gemini-pro
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-pro
 ```
 
-## Deployment
+4. Set up Appwrite:
+   - Create a new project in Appwrite
+   - Create collections with the following schemas:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+   **Users Collection:**
+   ```json
+   {
+     "user_id": "string",
+     "email": "string",
+     "name": "string",
+     "created_at": "string",
+     "updated_at": "string"
+   }
+   ```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+   **Generations Collection:**
+   ```json
+   {
+     "name": "string",
+     "notes": "array",
+     "midiData": "object",
+     "fileId": "string",
+     "description": "string",
+     "userId": "string",
+     "instrument": "string",
+     "createdAt": "string",
+     "updatedAt": "string"
+   }
+   ```
 
+   **Files Collection:**
+   ```json
+   {
+     "fileId": "string",
+     "originalName": "string",
+     "size": "number",
+     "mimeType": "string",
+     "userId": "string",
+     "createdAt": "string"
+   }
+   ```
+
+5. Create a storage bucket in Appwrite for MIDI files
+
+## Running the Application
+
+Development mode:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Production mode:
+```bash
+npm run build
+npm run start:prod
+```
 
-## Resources
+## API Documentation
 
-Check out a few resources that may come in handy when working with NestJS:
+### Authentication
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+All endpoints except those marked with @Public() require JWT authentication.
 
-## Support
+### Endpoints
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+#### Music Generation
 
-## Stay in touch
+1. Generate Music
+```http
+POST /generate/ai-response
+{
+    "songName": "Happy Birthday",  // optional
+    "instrument": "piano",         // optional
+    "extra": "Make it upbeat"     // optional
+}
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+2. Save Generation
+```http
+POST /generate/save
+{
+    "name": "My Song",
+    "notes": [...],
+    "description": "A happy melody",
+    "userId": "user123",
+    "instrument": "piano"
+}
+```
+
+3. Batch Save Generations
+```http
+POST /generate/batch/save
+[
+    {
+        "name": "Song 1",
+        "notes": [...],
+        "userId": "user123"
+    },
+    {
+        "name": "Song 2",
+        "notes": [...],
+        "userId": "user123"
+    }
+]
+```
+
+4. Get User's Generations
+```http
+GET /generate/user/:userId
+```
+
+5. Get Specific Generation
+```http
+GET /generate/:id
+```
+
+6. Download MIDI File
+```http
+GET /generate/:id/download
+```
+
+7. Delete Generation
+```http
+DELETE /generate/:id
+{
+    "userId": "user123"
+}
+```
+
+8. Batch Delete Generations
+```http
+DELETE /generate/batch
+{
+    "ids": ["gen1", "gen2"],
+    "userId": "user123"
+}
+```
+
+#### User Management
+
+1. Create User
+```http
+POST /auth/register
+{
+    "email": "user@example.com",
+    "password": "secure_password",
+    "name": "John Doe"
+}
+```
+
+2. Login
+```http
+POST /auth/login
+{
+    "email": "user@example.com",
+    "password": "secure_password"
+}
+```
+
+3. Get User Profile
+```http
+GET /auth/profile/:userId
+```
+
+4. Update User Profile
+```http
+PUT /auth/profile/:userId
+{
+    "name": "New Name",
+    "email": "new.email@example.com"
+}
+```
+
+### Supported Instruments
+
+- piano (default)
+- guitar
+- violin
+- flute
+- drums
+- trumpet
+- saxophone
+- cello
+
+## Error Handling
+
+The API uses standard HTTP status codes:
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 500: Internal Server Error
+
+All error responses include a message explaining the error.
+
+## Testing
+
+Run tests:
+```bash
+npm run test
+```
+
+Run e2e tests:
+```bash
+npm run test:e2e
+```
+
+## Security
+
+- All endpoints are protected with JWT authentication (except those marked with @Public())
+- File access is controlled through user ownership
+- API keys and sensitive data are managed through environment variables
+- Input validation is implemented for all endpoints
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the MIT License - see the LICENSE file for details
