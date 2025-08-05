@@ -126,7 +126,7 @@ APPWRITE_GENERATION_COLLECTION_ID=your-generation-collection-id
 APPWRITE_BUCKET_ID=your-bucket-id
 
 # Google Gemini API
-GEMINI_API_URL=https://generativeai.googleapis.com/v1/models/gemini-pro
+GEMINI_API_URL=https://generativeai.googleapis.com/v1/
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-pro
 
