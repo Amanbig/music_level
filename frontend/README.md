@@ -75,7 +75,7 @@ npm install
 cp .env.local.example .env.local
 
 # Edit .env.local with your configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
+BACKEND_API_URL=http://localhost:8000
 ```
 
 3. Start the development server:
@@ -92,22 +92,33 @@ npm run dev
 - `npm run start` - Start the production server
 - `npm run lint` - Run ESLint for code quality
 
-## API Integration
+## Architecture
 
-The frontend communicates with the backend API through the following services:
+This frontend uses a secure three-tier architecture:
 
-### Authentication Service (`lib/auth.ts`)
-- User registration and login
-- JWT token management
-- Session validation
-- User profile management
+```
+Frontend (React) → Next.js API Routes → NestJS Backend
+```
 
-### Music Service (`lib/music.ts`)
-- AI music generation requests
-- Save compositions to library
-- Retrieve user's saved music
-- Download MIDI files
-- Delete compositions
+### Security Benefits
+- **Hidden Backend**: The actual NestJS backend URL is never exposed to the client
+- **HTTP-Only Cookies**: JWT tokens are stored in secure HTTP-only cookies
+- **Server-Side Validation**: Authentication is validated on the server side
+- **Request Proxy**: All API requests go through Next.js API routes for additional security
+
+### API Integration
+
+The frontend communicates with the backend through Next.js API routes:
+
+#### Next.js API Routes (`/api/*`)
+- `/api/auth/*` - Authentication endpoints (login, signup, logout, me)
+- `/api/generate/*` - Music generation and management endpoints
+- All routes handle authentication and forward requests to NestJS backend
+
+#### Frontend Services
+- **Authentication Service (`lib/auth.ts`)**: User management and session handling
+- **Music Service (`lib/music.ts`)**: Music generation and library management
+- **Backend API (`lib/backend-api.ts`)**: Server-side HTTP client for NestJS communication
 
 ## Key Features
 
@@ -141,9 +152,11 @@ The frontend communicates with the backend API through the following services:
 ## Environment Variables
 
 ```bash
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000  # Backend API URL
+# Backend API Configuration (Server-side only)
+BACKEND_API_URL=http://localhost:8000  # NestJS backend URL for Next.js API routes
 ```
+
+**Note**: The `BACKEND_API_URL` is only used by Next.js API routes on the server side. The frontend never directly communicates with the NestJS backend, ensuring better security.
 
 ## Deployment
 
@@ -176,19 +189,28 @@ npm run start
 ### Common Issues
 
 1. **API Connection Issues**
-   - Verify backend is running on port 8000
-   - Check CORS configuration in backend
-   - Ensure `NEXT_PUBLIC_API_URL` is set correctly
+   - Verify NestJS backend is running on port 8000
+   - Check `BACKEND_API_URL` environment variable is set correctly
+   - Ensure CORS configuration in NestJS backend allows Next.js origin
+   - Check Next.js API routes are working: visit `/api/auth/me` in browser
 
 2. **Authentication Problems**
-   - Clear browser cookies and localStorage
-   - Check JWT token expiration
-   - Verify backend authentication endpoints
+   - Clear browser cookies (JWT tokens are stored in HTTP-only cookies)
+   - Check if Next.js API routes are properly forwarding auth headers
+   - Verify NestJS backend authentication endpoints are working
+   - Check browser Network tab for API route responses
 
 3. **Build Errors**
    - Clear `.next` directory: `rm -rf .next`
    - Reinstall dependencies: `rm -rf node_modules && npm install`
    - Check TypeScript errors: `npm run lint`
+   - Verify all API route files are properly structured
+
+4. **Next.js API Route Issues**
+   - Check server logs for API route errors
+   - Verify `BACKEND_API_URL` is accessible from the Next.js server
+   - Test backend endpoints directly with tools like Postman
+   - Ensure proper error handling in API routes
 
 ## License
 

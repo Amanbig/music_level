@@ -19,19 +19,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (!authService.isAuthenticated()) {
-        if (!pathname.startsWith('/auth')) {
-          router.push('/auth/login');
-        }
-        setLoading(false);
-        return;
-      }
-
       try {
         const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        if (currentUser) {
+          setUser(currentUser);
+        } else {
+          if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+            router.push('/auth/login');
+          }
+        }
       } catch (error) {
-        router.push('/auth/login');
+        if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+          router.push('/auth/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -53,8 +53,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     );
   }
 
-  // Don't show layout for auth pages
-  if (pathname.startsWith('/auth')) {
+  // Don't show layout for auth and landing pages
+  if (pathname.startsWith('/auth') || pathname.startsWith('/landing')) {
     return <>{children}</>;
   }
 

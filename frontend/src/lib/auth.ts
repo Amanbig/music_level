@@ -1,5 +1,4 @@
 import api from './api';
-import Cookies from 'js-cookie';
 
 export interface User {
   $id: string;
@@ -22,17 +21,11 @@ export interface SignupData {
 export const authService = {
   async login(data: LoginData) {
     const response = await api.post('/auth/login', data);
-    if (response.data.token) {
-      Cookies.set('token', response.data.token, { expires: 7 });
-    }
     return response.data;
   },
 
   async signup(data: SignupData) {
     const response = await api.post('/auth/signup', data);
-    if (response.data.token) {
-      Cookies.set('token', response.data.token, { expires: 7 });
-    }
     return response.data;
   },
 
@@ -41,8 +34,6 @@ export const authService = {
       await api.post('/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      Cookies.remove('token');
     }
   },
 
@@ -55,7 +46,12 @@ export const authService = {
     }
   },
 
-  isAuthenticated(): boolean {
-    return !!Cookies.get('token');
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const user = await this.getCurrentUser();
+      return !!user;
+    } catch (error) {
+      return false;
+    }
   }
 };
