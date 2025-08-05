@@ -14,14 +14,24 @@ An AI-powered music generation platform that allows users to create unique music
 
 ## 🏗️ Architecture
 
-This project follows a microservices architecture with separate frontend and backend applications:
+This project follows a secure three-tier architecture with Next.js API routes acting as a proxy layer:
+
+```
+Frontend (React) → Next.js API Routes → NestJS Backend
+```
 
 ```
 music_level/
 ├── backend/          # NestJS API server
-├── frontend/         # Next.js web application
+├── frontend/         # Next.js web application with API routes
 └── README.md        # This file
 ```
+
+### Security Benefits
+- **Hidden Backend**: The NestJS backend URL is never exposed to the client
+- **HTTP-Only Cookies**: JWT tokens are stored in secure HTTP-only cookies
+- **Server-Side Validation**: Authentication is validated on the server side
+- **Request Proxy**: All API requests go through Next.js API routes for additional security
 
 ### Backend (NestJS)
 - **Framework**: NestJS with TypeScript
@@ -29,13 +39,16 @@ music_level/
 - **AI Integration**: Google Gemini API for music generation
 - **Authentication**: JWT with Passport.js
 - **File Processing**: MIDI file generation and management
+- **Security**: CORS configured to only allow Next.js frontend
 
 ### Frontend (Next.js)
 - **Framework**: Next.js 15 with App Router
 - **UI Library**: React 19 with Tailwind CSS
+- **API Layer**: Next.js API routes proxy all backend requests
+- **Authentication**: HTTP-only cookies with server-side validation
 - **State Management**: React hooks and context
 - **Form Handling**: React Hook Form
-- **HTTP Client**: Axios with interceptors
+- **HTTP Client**: Axios (client-side only communicates with Next.js API routes)
 
 ## 🚀 Quick Start
 
@@ -123,9 +136,11 @@ JWT_EXPIRES_IN=7d
 ### Frontend Environment Variables
 
 ```bash
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Backend API Configuration (Server-side only)
+BACKEND_API_URL=http://localhost:8000  # NestJS backend URL for Next.js API routes
 ```
+
+**Note**: The frontend uses Next.js API routes as a secure proxy layer. The `BACKEND_API_URL` is only used server-side and never exposed to the client.
 
 ## 📚 API Documentation
 
