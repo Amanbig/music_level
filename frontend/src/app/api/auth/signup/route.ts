@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
     // Forward the signup request to the NestJS backend
     const response = await backendApi.post('/auth/signup', body);
     
-    const { token, user, ...rest } = response.data;
+    const { accessToken, user, ...rest } = response.data;
     
-    if (token) {
+    if (accessToken) {
       // Set HTTP-only cookie for security
       const cookieStore = await cookies();
-      cookieStore.set('token', token, {
+      cookieStore.set('token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

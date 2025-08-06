@@ -14,9 +14,19 @@ export class AuthService {
     async signup(userData: CreateUserDto) {
         try {
             const user = await this.appwriteService.createUser(userData);
+            
+            // Generate JWT token for automatic login after signup
+            const payload: JwtPayload = {
+                sub: user.$id,
+                email: user.email,
+                name: user.name
+            };
+            const accessToken = this.jwtService.sign(payload);
+            
             return {
                 success: true,
                 message: 'User created successfully',
+                accessToken,
                 user: {
                     id: user.$id,
                     email: user.email,

@@ -1,10 +1,10 @@
 import api from './api';
 
 export interface User {
-  $id: string;
+  userId: string;
   name: string;
   email: string;
-  emailVerification: boolean;
+  emailVerification?: boolean;
 }
 
 export interface LoginData {
@@ -41,6 +41,7 @@ export const authService = {
     try {
       const response = await api.get('/auth/me');
       console.log('Auth API Response:', response.data);
+      console.log('User object structure:', JSON.stringify(response.data.user, null, 2));
       return response.data.user;
     } catch (error) {
       console.error('getCurrentUser error:', error);

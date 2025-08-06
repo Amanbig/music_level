@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards, BadRequestException, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UseGuards, BadRequestException, StreamableFile, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { GenerateService } from './generate.service';
 import { GenerationRequestDto, SaveGenerationDto } from './dto/generation.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -15,11 +16,17 @@ export class GenerateController {
 
     @Post('ai-response')
     async getAIResponse(@Body() dto: GenerationRequestDto) {
-        return this.generateService.getAIResponse(dto);
+        const notes = await this.generateService.getAIResponse(dto);
+        return {
+            success: true,
+            notes: notes,
+            message: `Generated ${notes.length} musical notes`
+        };
     }
 
     @Post('save')
     async saveGeneration(@Body() dto: SaveGenerationDto) {
+        console.log('Save generation request received:', JSON.stringify(dto, null, 2));
         return this.generateService.saveGeneration(dto);
     }
 
@@ -53,14 +60,26 @@ export class GenerateController {
     }
 
     @Get(':id/download')
-    async downloadGeneration(@Param('id') id: string): Promise<StreamableFile> {
-        const generation = await this.generateService.getGeneration(id);
-        if (!generation.fileId) {
-            throw new BadRequestException('No MIDI file associated with this generation');
+    async downloadGeneration(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+        try {
+            const generation = await this.generateService.getGeneration(id);
+            if (!generation.fileId) {
+                throw new BadRequestException('No MIDI file associated with this generation');
+            }
+            
+            const file = await this.appwriteService.downloadFile(generation.fileId);
+            
+            // Set proper headers for MIDI file download
+            res.set({
+                'Content-Type': 'audio/midi',
+                'Content-Disposition': `attachment; filename="${generation.name}.mid"`,
+            });
+            
+            return file;
+        } catch (error) {
+            console.error('Download error:', error);
+            throw new BadRequestException('Failed to download file');
         }
-        
-        const file = await this.appwriteService.downloadFile(generation.fileId);
-        return new StreamableFile(file);
     }
 
     @Delete(':id')

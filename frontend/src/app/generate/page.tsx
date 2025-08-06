@@ -30,6 +30,9 @@ export default function GeneratePage() {
     try {
       const { saveName, saveDescription, ...generateData } = data;
       const result = await musicService.generateMusic(generateData);
+      console.log('AI generation result:', result);
+      console.log('Result type:', typeof result);
+      console.log('Result keys:', Object.keys(result || {}));
       setGeneratedMusic(result);
     } catch (error: any) {
       console.error('Generation error:', error);
@@ -48,11 +51,15 @@ export default function GeneratePage() {
       const user = await authService.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Generated music object:', generatedMusic);
+      console.log('Notes to save:', generatedMusic.notes || []);
+      console.log('Notes array length:', (generatedMusic.notes || []).length);
+
       await musicService.saveGeneration({
         name: data.saveName,
-        notes: generatedMusic.notes || [],
+        notes: generatedMusic.notes || generatedMusic || [], // Try different properties
         description: data.saveDescription,
-        userId: user.$id,
+        userId: user.userId,
         instrument: data.instrument
       });
       

@@ -21,7 +21,7 @@ export default function DashboardPage() {
         setUser(currentUser);
         
         if (currentUser) {
-          const userGenerations = await musicService.getUserGenerations(currentUser.$id);
+          const userGenerations = await musicService.getUserGenerations(currentUser.userId);
           setGenerations(userGenerations);
         }
       } catch (error) {
@@ -38,7 +38,7 @@ export default function DashboardPage() {
     if (!user || !confirm('Are you sure you want to delete this generation?')) return;
     
     try {
-      await musicService.deleteGeneration(id, user.$id);
+      await musicService.deleteGeneration(id, user.userId);
       setGenerations(generations.filter(g => g.id !== id));
     } catch (error) {
       console.error('Error deleting generation:', error);

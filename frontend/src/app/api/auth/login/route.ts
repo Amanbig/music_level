@@ -9,18 +9,22 @@ export async function POST(request: NextRequest) {
     // Forward the login request to the NestJS backend
     const response = await backendApi.post('/auth/login', body);
     
-    const { token, user, ...rest } = response.data;
+    const { accessToken, user, ...rest } = response.data;
+    console.log('Login API route - Backend response:', { hasAccessToken: !!accessToken, hasUser: !!user, ...rest });
     
-    if (token) {
+    if (accessToken) {
       // Set HTTP-only cookie for security
       const cookieStore = await cookies();
-      cookieStore.set('token', token, {
+      cookieStore.set('token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: '/',
       });
+      console.log('Login API route - Token cookie set successfully');
+    } else {
+      console.log('Login API route - No token in backend response');
     }
     
     // Return user data without the token (for security)
