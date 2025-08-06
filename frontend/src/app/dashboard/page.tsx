@@ -21,7 +21,7 @@ export default function DashboardPage() {
       try {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
-        
+
         if (currentUser) {
           const userGenerations = await musicService.getUserGenerations(currentUser.userId);
           setGenerations(userGenerations);
@@ -38,7 +38,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     if (!user || !confirm('Are you sure you want to delete this generation?')) return;
-    
+
     try {
       await musicService.deleteGeneration(id, user.userId);
       setGenerations(generations.filter(g => g.id !== id));
@@ -79,10 +79,10 @@ export default function DashboardPage() {
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
               Welcome back, {user?.name}! 👋
             </h1>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-muted-foreground">
               Manage your AI-generated music compositions and create new masterpieces
             </p>
           </div>
@@ -100,8 +100,8 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Total Compositions</p>
-                  <p className="text-3xl font-bold text-slate-900">{generations.length}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Compositions</p>
+                  <p className="text-3xl font-bold text-foreground">{generations.length}</p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
                   <Music className="h-6 w-6 text-blue-600" />
@@ -109,18 +109,18 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card variant="elevated">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">This Month</p>
-                  <p className="text-3xl font-bold text-slate-900">
+                  <p className="text-sm font-medium text-muted-foreground">This Month</p>
+                  <p className="text-3xl font-bold text-foreground">
                     {generations.filter(g => {
                       const createdDate = new Date(g.createdAt);
                       const now = new Date();
-                      return createdDate.getMonth() === now.getMonth() && 
-                             createdDate.getFullYear() === now.getFullYear();
+                      return createdDate.getMonth() === now.getMonth() &&
+                        createdDate.getFullYear() === now.getFullYear();
                     }).length}
                   </p>
                 </div>
@@ -130,14 +130,14 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card variant="elevated">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Latest Creation</p>
-                  <p className="text-lg font-semibold text-slate-900">
-                    {generations.length > 0 
+                  <p className="text-sm font-medium text-muted-foreground">Latest Creation</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {generations.length > 0
                       ? new Date(Math.max(...generations.map(g => new Date(g.createdAt).getTime()))).toLocaleDateString()
                       : 'None yet'
                     }
@@ -154,9 +154,9 @@ export default function DashboardPage() {
         {/* Music Library */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">Your Music Library</h2>
+            <h2 className="text-2xl font-bold text-foreground">Your Music Library</h2>
             {generations.length > 0 && (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 {generations.length} composition{generations.length !== 1 ? 's' : ''}
               </p>
             )}
@@ -169,11 +169,11 @@ export default function DashboardPage() {
                   <div className="p-4 bg-blue-100 rounded-full w-fit mx-auto mb-6">
                     <Music className="h-12 w-12 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3">
+                  <h3 className="text-xl font-bold text-foreground mb-3">
                     No music generated yet
                   </h3>
-                  <p className="text-slate-600 mb-8">
-                    Start your musical journey by creating your first AI-powered composition. 
+                  <p className="text-muted-foreground mb-8">
+                    Start your musical journey by creating your first AI-powered composition.
                     It only takes a few seconds!
                   </p>
                   <Link href="/generate">
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                         <CardTitle className="text-lg truncate mb-1">
                           {generation.name}
                         </CardTitle>
-                        <div className="flex items-center text-sm text-slate-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4 mr-1" />
                           {new Date(generation.createdAt).toLocaleDateString()}
                         </div>
@@ -205,21 +205,21 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-0">
                     <div className="space-y-4">
                       {generation.description && (
-                        <p className="text-sm text-slate-600 line-clamp-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {generation.description}
                         </p>
                       )}
-                      
+
                       {generation.instrument && (
                         <Badge variant="secondary" size="sm">
                           {generation.instrument}
                         </Badge>
                       )}
-                      
+
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"

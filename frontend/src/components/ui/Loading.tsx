@@ -21,12 +21,12 @@ export const Loading: React.FC<LoadingProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center space-y-3 ${className}`}>
       <div className="relative">
-        <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-slate-200`}>
-          <div className="absolute top-0 left-0 h-full w-full rounded-full border-2 border-transparent border-t-blue-600"></div>
+        <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-muted`}>
+          <div className="absolute top-0 left-0 h-full w-full rounded-full border-2 border-transparent border-t-blue-600 dark:border-t-blue-400"></div>
         </div>
       </div>
       {text && (
-        <p className="text-sm text-slate-600 animate-pulse">{text}</p>
+        <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
       )}
     </div>
   );

@@ -8,10 +8,10 @@ interface CardProps {
 
 export const Card: React.FC<CardProps> = ({ children, className = '', variant = 'default' }) => {
   const variantClasses = {
-    default: 'bg-white border border-slate-200 shadow-sm hover:shadow-md',
-    elevated: 'bg-white border border-slate-200 shadow-lg hover:shadow-xl',
-    glass: 'bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg',
-    gradient: 'bg-gradient-to-br from-white to-slate-50 border border-slate-200 shadow-lg'
+    default: 'bg-card border border-border shadow-sm hover:shadow-md dark:shadow-lg/10 dark:hover:shadow-lg/20',
+    elevated: 'bg-card border border-border shadow-lg hover:shadow-xl dark:shadow-lg/20 dark:hover:shadow-xl/30',
+    glass: 'bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg dark:bg-card/60 dark:border-border/30',
+    gradient: 'bg-gradient-to-br from-card to-muted border border-border shadow-lg dark:from-card dark:to-muted/50'
   };
 
   return (
@@ -23,7 +23,7 @@ export const Card: React.FC<CardProps> = ({ children, className = '', variant = 
 
 export const CardHeader: React.FC<CardProps> = ({ children, className = '' }) => {
   return (
-    <div className={`px-6 py-5 border-b border-slate-100 ${className}`}>
+    <div className={`px-6 py-5 border-b border-border ${className}`}>
       {children}
     </div>
   );
@@ -39,7 +39,7 @@ export const CardContent: React.FC<CardProps> = ({ children, className = '' }) =
 
 export const CardTitle: React.FC<CardProps> = ({ children, className = '' }) => {
   return (
-    <h3 className={`text-xl font-bold text-slate-900 tracking-tight ${className}`}>
+    <h3 className={`text-xl font-bold text-card-foreground tracking-tight ${className}`}>
       {children}
     </h3>
   );
@@ -47,7 +47,7 @@ export const CardTitle: React.FC<CardProps> = ({ children, className = '' }) => 
 
 export const CardDescription: React.FC<CardProps> = ({ children, className = '' }) => {
   return (
-    <p className={`text-sm text-slate-600 mt-1.5 ${className}`}>
+    <p className={`text-sm text-muted-foreground mt-1.5 ${className}`}>
       {children}
     </p>
   );

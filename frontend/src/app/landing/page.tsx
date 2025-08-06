@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Music, Wand2, Download, Save, Users, Sparkles, Play, Star, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-light">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-white/20 sticky top-0 z-50">
+      <header className="bg-card/80 backdrop-blur-sm shadow-sm border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -20,7 +21,8 @@ export default function LandingPage() {
                 Music Level
               </span>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
               <Link href="/auth/login">
                 <Button variant="ghost" size="md">Sign In</Button>
               </Link>
@@ -34,21 +36,21 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-600/5 dark:to-purple-600/5"></div>
+        <div className="max-w-7xl mx-auto mobile-padding sm:px-6 lg:px-8 text-center relative">
+          <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded-full text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4 mr-2" />
             AI-Powered Music Generation
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-foreground mb-6 leading-tight">
             Create Music with
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
               AI Magic
             </span>
           </h1>
           
-          <p className="text-xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
             Transform your musical ideas into reality with our advanced AI composer. 
             Generate beautiful, unique compositions in seconds - perfect for musicians, 
             content creators, and music enthusiasts.
@@ -70,36 +72,36 @@ export default function LandingPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-16 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-slate-900">10K+</div>
-              <div className="text-sm text-slate-600">Songs Generated</div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">10K+</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Songs Generated</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-slate-900">5+</div>
-              <div className="text-sm text-slate-600">Instruments</div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">5+</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Instruments</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-slate-900">1K+</div>
-              <div className="text-sm text-slate-600">Happy Users</div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground">1K+</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Happy Users</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-24 bg-card">
+        <div className="max-w-7xl mx-auto mobile-padding sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Powerful Features for Music Creation
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
               Everything you need to create, save, and share your AI-generated music compositions
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             <Card variant="elevated" className="text-center group hover:scale-105 transition-transform duration-300">
               <CardHeader>
                 <div className="mx-auto mb-4 p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl w-fit">
@@ -111,7 +113,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-600">
+                <p className="text-muted-foreground">
                   Customize instruments, style, and mood to match your vision. 
                   Our AI understands music theory and creates harmonious compositions.
                 </p>
@@ -129,7 +131,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-600">
+                <p className="text-muted-foreground">
                   Save your favorite compositions, add descriptions, and organize 
                   your music collection with tags and categories.
                 </p>
@@ -147,7 +149,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-600">
+                <p className="text-muted-foreground">
                   Export your music as MIDI files compatible with all major 
                   music production software and digital audio workstations.
                 </p>
@@ -158,18 +160,18 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-24 bg-secondary">
+        <div className="max-w-7xl mx-auto mobile-padding sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Loved by Creators Worldwide
             </h2>
-            <p className="text-xl text-slate-600">
+            <p className="text-lg sm:text-xl text-muted-foreground">
               See what our users are saying about Music Level
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 name: "Sarah Johnson",
@@ -196,10 +198,10 @@ export default function LandingPage() {
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-slate-600 mb-4 italic">"{testimonial.content}"</p>
+                <p className="text-muted-foreground mb-4 italic">"{testimonial.content}"</p>
                 <div>
-                  <div className="font-semibold text-slate-900">{testimonial.name}</div>
-                  <div className="text-sm text-slate-500">{testimonial.role}</div>
+                  <div className="font-semibold text-foreground">{testimonial.name}</div>
+                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
               </Card>
             ))}
@@ -209,16 +211,16 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <h2 className="text-4xl font-bold text-white mb-6">
+        <div className="absolute inset-0 bg-black/10 dark:bg-black/20"></div>
+        <div className="max-w-7xl mx-auto mobile-padding sm:px-6 lg:px-8 text-center relative">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
             Ready to Create Amazing Music?
           </h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
             Join thousands of creators who are already using AI to bring their musical ideas to life
           </p>
           <Link href="/auth/signup">
-            <Button size="xl" variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
+            <Button size="xl" variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-white dark:text-blue-600 dark:hover:bg-blue-50">
               <Users className="h-5 w-5 mr-2" />
               Join Music Level Today
               <ArrowRight className="h-5 w-5 ml-2" />
@@ -228,8 +230,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="bg-slate-900 dark:bg-slate-950 text-white py-12">
+        <div className="max-w-7xl mx-auto mobile-padding sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-6">
               <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
@@ -237,11 +239,11 @@ export default function LandingPage() {
               </div>
               <span className="text-xl font-bold">Music Level</span>
             </div>
-            <p className="text-slate-400 mb-8">
+            <p className="text-muted-foreground mb-8">
               AI-powered music generation platform for creators worldwide
             </p>
-            <div className="border-t border-slate-800 pt-8">
-              <p className="text-slate-500 text-sm">
+            <div className="border-t border-border pt-8">
+              <p className="text-muted-foreground text-sm">
                 © 2025 Music Level. All rights reserved.
               </p>
             </div>

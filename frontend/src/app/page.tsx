@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth';
+import { Loading } from '@/components/ui/Loading';
 
 export default function Home() {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loading size="xl" text="Loading Music Level..." />
     </div>
   );
 }

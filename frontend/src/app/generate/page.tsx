@@ -120,10 +120,10 @@ export default function GeneratePage() {
             <Sparkles className="h-4 w-4 mr-2" />
             AI Music Generation
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Create Your Musical Masterpiece
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Transform your ideas into beautiful music compositions using advanced AI technology
           </p>
         </div>
@@ -195,9 +195,9 @@ export default function GeneratePage() {
               </form>
 
               {/* Tips */}
-              <div className="bg-slate-50 rounded-lg p-4 mt-6">
-                <h4 className="text-sm font-semibold text-slate-900 mb-3">💡 Pro Tips:</h4>
-                <ul className="text-sm text-slate-600 space-y-1">
+              <div className="bg-muted rounded-lg p-4 mt-6">
+                <h4 className="text-sm font-semibold text-foreground mb-3">💡 Pro Tips:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• Be specific about the mood you want (happy, sad, energetic, calm)</li>
                   <li>• Mention musical styles (jazz, classical, rock, ambient)</li>
                   <li>• Describe the tempo (fast, slow, moderate)</li>
@@ -223,8 +223,8 @@ export default function GeneratePage() {
                 <div className="text-center py-16">
                   <Loading size="lg" text="Creating your musical masterpiece..." />
                   <div className="mt-6 space-y-2">
-                    <p className="text-sm text-slate-600">This usually takes 10-30 seconds</p>
-                    <div className="flex items-center justify-center space-x-2 text-xs text-slate-500">
+                    <p className="text-sm text-muted-foreground">This usually takes 10-30 seconds</p>
+                    <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -233,13 +233,13 @@ export default function GeneratePage() {
                 </div>
               ) : !generatedMusic ? (
                 <div className="text-center py-16">
-                  <div className="p-4 bg-slate-100 rounded-full w-fit mx-auto mb-6">
-                    <FileMusic className="h-12 w-12 text-slate-400" />
+                  <div className="p-4 bg-muted rounded-full w-fit mx-auto mb-6">
+                    <FileMusic className="h-12 w-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
                     Ready to Generate
                   </h3>
-                  <p className="text-slate-600">
+                  <p className="text-muted-foreground">
                     Fill out the form and click "Generate Music" to create your composition
                   </p>
                 </div>
@@ -268,7 +268,7 @@ export default function GeneratePage() {
                   )}
                   
                   <div className="border-t pt-6">
-                    <h4 className="text-lg font-semibold text-slate-900 mb-4">Save to Library</h4>
+                    <h4 className="text-lg font-semibold text-foreground mb-4">Save to Library</h4>
                     
                     <form onSubmit={handleSubmit(onSave)} className="space-y-4">
                       <Input
