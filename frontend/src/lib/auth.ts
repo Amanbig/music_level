@@ -40,8 +40,10 @@ export const authService = {
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await api.get('/auth/me');
+      console.log('Auth API Response:', response.data);
       return response.data.user;
     } catch (error) {
+      console.error('getCurrentUser error:', error);
       return null;
     }
   },

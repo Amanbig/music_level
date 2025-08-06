@@ -21,9 +21,12 @@ export default function LoginPage() {
     setError('');
     
     try {
-      await authService.login(data);
+      const result = await authService.login(data);
+      console.log('Login result:', result);
+      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);

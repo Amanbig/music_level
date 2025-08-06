@@ -19,17 +19,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('Layout: Checking auth for pathname:', pathname);
       try {
         const currentUser = await authService.getCurrentUser();
+        console.log('Layout: Current user:', currentUser);
         if (currentUser) {
           setUser(currentUser);
+          console.log('Layout: User set successfully');
         } else {
+          console.log('Layout: No user found, checking if should redirect');
           if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+            console.log('Layout: Redirecting to login');
             router.push('/auth/login');
           }
         }
       } catch (error) {
+        console.error('Layout: Auth check error:', error);
         if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+          console.log('Layout: Error occurred, redirecting to login');
           router.push('/auth/login');
         }
       } finally {
