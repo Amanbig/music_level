@@ -179,6 +179,7 @@ export class GenerateService {
     // Function to delete a generation
     async deleteGeneration(generationId: string, userId: string): Promise<void> {
         try {
+            // First get the generation document to check ownership and get fileId
             const document = await this.appwriteService.databases.getDocument(
                 this.appwriteService.databaseId,
                 this.generationsCollectionId,
@@ -189,11 +190,33 @@ export class GenerateService {
                 throw new Error('Unauthorized');
             }
 
+            this.logger.log(`Deleting generation ${generationId} for user ${userId}`);
+
+            // Delete the MIDI file from storage if it exists
+            if (document.fileId) {
+                try {
+                    this.logger.log(`Deleting MIDI file from storage: ${document.fileId}`);
+                    await this.appwriteService.storage.deleteFile(
+                        this.appwriteService.bucketId,
+                        document.fileId
+                    );
+                    this.logger.log(`MIDI file deleted successfully: ${document.fileId}`);
+                } catch (fileError) {
+                    this.logger.error(`Error deleting MIDI file ${document.fileId}:`, fileError);
+                    // Continue with database deletion even if file deletion fails
+                }
+            } else {
+                this.logger.warn(`No fileId found for generation ${generationId}, skipping file deletion`);
+            }
+
+            // Delete the database document
             await this.appwriteService.databases.deleteDocument(
                 this.appwriteService.databaseId,
                 this.generationsCollectionId,
                 generationId
             );
+
+            this.logger.log(`Generation deleted successfully: ${generationId}`);
         } catch (error) {
             this.logger.error(`Error deleting generation ${generationId}:`, error);
             throw new Error('Failed to delete generation');
