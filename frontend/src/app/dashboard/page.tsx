@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { musicService, Generation } from '@/lib/music';
 import { authService } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Loading } from '@/components/ui/Loading';
 import { Layout } from '@/components/Layout';
-import { Music, Download, Trash2, Plus, Calendar } from 'lucide-react';
+import { Music, Download, Trash2, Plus, Calendar, Sparkles, TrendingUp, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -65,7 +67,7 @@ export default function DashboardPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <Loading size="lg" text="Loading your music library..." />
         </div>
       </Layout>
     );
@@ -73,94 +75,177 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="px-4 sm:px-0">
-        <div className="flex justify-between items-center mb-8">
+      <div className="px-4 sm:px-0 space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-2 text-gray-600">
-              Welcome back, {user?.name}! Manage your AI-generated music compositions.
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">
+              Welcome back, {user?.name}! 👋
+            </h1>
+            <p className="text-lg text-slate-600">
+              Manage your AI-generated music compositions and create new masterpieces
             </p>
           </div>
           <Link href="/generate">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button variant="gradient" size="lg" className="w-full lg:w-auto">
+              <Sparkles className="h-5 w-5 mr-2" />
               Generate New Music
             </Button>
           </Link>
         </div>
 
-        {generations.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Music className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No music generated yet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Start creating your first AI-powered music composition
-              </p>
-              <Link href="/generate">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Generate Your First Song
-                </Button>
-              </Link>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card variant="elevated">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total Compositions</p>
+                  <p className="text-3xl font-bold text-slate-900">{generations.length}</p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Music className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {generations.map((generation) => (
-              <Card key={generation.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="truncate">{generation.name}</span>
-                    <Music className="h-5 w-5 text-blue-600" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {generation.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {generation.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(generation.createdAt).toLocaleDateString()}
-                    </div>
-                    
-                    {generation.instrument && (
-                      <div className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                        {generation.instrument}
-                      </div>
-                    )}
-                    
-                    <div className="flex space-x-2 pt-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownload(generation.id, generation.name)}
-                        className="flex-1"
-                      >
-                        <Download className="h-3 w-3 mr-1" />
-                        Download
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(generation.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          
+          <Card variant="elevated">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">This Month</p>
+                  <p className="text-3xl font-bold text-slate-900">
+                    {generations.filter(g => {
+                      const createdDate = new Date(g.createdAt);
+                      const now = new Date();
+                      return createdDate.getMonth() === now.getMonth() && 
+                             createdDate.getFullYear() === now.getFullYear();
+                    }).length}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card variant="elevated">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Latest Creation</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {generations.length > 0 
+                      ? new Date(Math.max(...generations.map(g => new Date(g.createdAt).getTime()))).toLocaleDateString()
+                      : 'None yet'
+                    }
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Clock className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Music Library */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-900">Your Music Library</h2>
+            {generations.length > 0 && (
+              <p className="text-sm text-slate-600">
+                {generations.length} composition{generations.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
-        )}
+
+          {generations.length === 0 ? (
+            <Card variant="gradient" className="text-center">
+              <CardContent className="py-16">
+                <div className="max-w-md mx-auto">
+                  <div className="p-4 bg-blue-100 rounded-full w-fit mx-auto mb-6">
+                    <Music className="h-12 w-12 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-3">
+                    No music generated yet
+                  </h3>
+                  <p className="text-slate-600 mb-8">
+                    Start your musical journey by creating your first AI-powered composition. 
+                    It only takes a few seconds!
+                  </p>
+                  <Link href="/generate">
+                    <Button variant="gradient" size="lg">
+                      <Plus className="h-5 w-5 mr-2" />
+                      Generate Your First Song
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {generations.map((generation) => (
+                <Card key={generation.id} variant="elevated" className="group hover:scale-[1.02] transition-all duration-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate mb-1">
+                          {generation.name}
+                        </CardTitle>
+                        <div className="flex items-center text-sm text-slate-500">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {new Date(generation.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                        <Music className="h-5 w-5 text-blue-600" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-4">
+                      {generation.description && (
+                        <p className="text-sm text-slate-600 line-clamp-2">
+                          {generation.description}
+                        </p>
+                      )}
+                      
+                      {generation.instrument && (
+                        <Badge variant="secondary" size="sm">
+                          {generation.instrument}
+                        </Badge>
+                      )}
+                      
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDownload(generation.id, generation.name)}
+                          className="flex-1"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(generation.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

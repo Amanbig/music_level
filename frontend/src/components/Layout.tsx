@@ -5,7 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { authService, User } from '@/lib/auth';
 import { Button } from './ui/Button';
-import { Music, User as UserIcon, LogOut, Home } from 'lucide-react';
+import { Loading } from './ui/Loading';
+import { Music, User as UserIcon, LogOut, Home, Sparkles, Menu, X } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -54,8 +56,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <Loading size="xl" text="Loading your workspace..." />
       </div>
     );
   }
@@ -69,63 +71,138 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return null;
   }
 
+  const navItems = [
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: Home,
+      active: pathname === '/dashboard'
+    },
+    {
+      href: '/generate',
+      label: 'Generate',
+      icon: Sparkles,
+      active: pathname === '/generate'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
+            {/* Logo and Desktop Navigation */}
             <div className="flex items-center">
-              <Link href="/dashboard" className="flex items-center space-x-2">
-                <Music className="h-8 w-8 text-blue-600" />
-                <span className="text-xl font-bold text-gray-900">Music Level</span>
+              <Link href="/dashboard" className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg">
+                  <Music className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Music Level
+                </span>
               </Link>
-              
-              <div className="ml-10 flex items-baseline space-x-4">
-                <Link
-                  href="/dashboard"
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    pathname === '/dashboard'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Home className="inline h-4 w-4 mr-1" />
-                  Dashboard
-                </Link>
-                <Link
-                  href="/generate"
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    pathname === '/generate'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Music className="inline h-4 w-4 mr-1" />
-                  Generate
-                </Link>
+
+              {/* Desktop Navigation */}
+              <div className="hidden md:ml-10 md:flex md:items-baseline md:space-x-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center ${item.active
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                  >
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <UserIcon className="h-5 w-5 text-gray-400" />
-                <span className="text-sm text-gray-700">{user.name}</span>
+
+            {/* Desktop User Menu */}
+            <div className="hidden md:flex md:items-center md:space-x-4">
+              <div className="flex items-center space-x-3 px-3 py-2 bg-slate-100 rounded-lg">
+                <div className="p-1.5 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full">
+                  <UserIcon className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-sm font-medium text-slate-700">{user.name}</span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
+                className="text-slate-600 hover:text-slate-900"
               >
-                <LogOut className="h-4 w-4 mr-1" />
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
+              </Button>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-sm">
+            <div className="px-4 py-3 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center ${item.active
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                >
+                  <item.icon className="h-4 w-4 mr-3" />
+                  {item.label}
+                </Link>
+              ))}
+
+              <div className="border-t border-slate-200 pt-3 mt-3">
+                <div className="flex items-center space-x-3 px-4 py-2 mb-2">
+                  <div className="p-1.5 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full">
+                    <UserIcon className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{user.name}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="w-full justify-start text-slate-600 hover:text-slate-900"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
-      
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0">
+          {children}
+        </div>
       </main>
     </div>
   );
