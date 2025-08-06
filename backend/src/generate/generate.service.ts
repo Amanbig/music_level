@@ -71,18 +71,23 @@ export class GenerateService {
             const fileName = `${saveDto.name.replace(/[^a-zA-Z0-9]/g, '_')}.mid`;
 
             // Create a File-like object from the buffer
+            this.logger.log(`Creating file object: ${fileName}, size: ${buffer.length} bytes`);
             const fileBlob = new Blob([buffer], { type: 'audio/midi' });
             const fileObject = new File([fileBlob], fileName, {
                 type: 'audio/midi',
                 lastModified: Date.now()
             });
 
+            this.logger.log(`File object created: ${fileObject.name}, size: ${fileObject.size}, type: ${fileObject.type}`);
+
             // Upload MIDI file
-            await this.appwriteService.storage.createFile(
+            this.logger.log(`Uploading file to Appwrite storage with ID: ${fileId}`);
+            const uploadResult = await this.appwriteService.storage.createFile(
                 this.appwriteService.bucketId,
                 fileId,
                 fileObject
             );
+            this.logger.log(`File uploaded successfully: ${uploadResult.$id}, size: ${uploadResult.sizeOriginal} bytes`);
 
             // Create document in database
             const document = await this.appwriteService.databases.createDocument(
@@ -311,6 +316,8 @@ export class GenerateService {
     // Function to generate MIDI buffer from notes
     async saveNotesAsMidi(notes: Note[], instrument: string = 'piano'): Promise<{ buffer: Buffer; midiData: any }> {
         try {
+            this.logger.log(`Creating MIDI file with ${notes.length} notes for instrument: ${instrument}`);
+
             const midi = new Midi();
             const track = midi.addTrack();
 
@@ -327,17 +334,33 @@ export class GenerateService {
             };
 
             // Set the instrument using the instrument property
-            track.instrument.number = instrumentNumbers[instrument.toLowerCase()] || 0;
+            const instrumentNumber = instrumentNumbers[instrument.toLowerCase()] || 0;
+            track.instrument.number = instrumentNumber;
+            this.logger.log(`Set instrument number: ${instrumentNumber} for ${instrument}`);
 
-            // Add notes to track
-            notes.forEach(note => {
-                track.addNote({
-                    name: note.note,
-                    time: note.time,
-                    duration: note.duration,
-                    velocity: note.velocity
-                });
+            // Add notes to track with validation
+            let addedNotes = 0;
+            notes.forEach((note, index) => {
+                try {
+                    this.logger.debug(`Adding note ${index + 1}: ${note.note} at time ${note.time}, duration ${note.duration}, velocity ${note.velocity}`);
+                    track.addNote({
+                        name: note.note,
+                        time: note.time,
+                        duration: note.duration,
+                        velocity: note.velocity
+                    });
+                    addedNotes++;
+                } catch (noteError) {
+                    this.logger.error(`Error adding note ${index + 1}:`, noteError);
+                }
             });
+
+            this.logger.log(`Successfully added ${addedNotes} out of ${notes.length} notes to MIDI track`);
+
+            // Log MIDI track information
+            this.logger.log(`MIDI track created with ${track.notes.length} notes`);
+            this.logger.log(`MIDI duration: ${midi.duration} seconds`);
+            this.logger.log(`MIDI tracks count: ${midi.tracks.length}`);
 
             // Get MIDI data for storage
             const midiData = {
@@ -355,8 +378,16 @@ export class GenerateService {
                 }))
             };
 
+            // Create MIDI buffer
+            const midiArray = midi.toArray();
+            const buffer = Buffer.from(midiArray);
+
+            this.logger.log(`MIDI array length: ${midiArray.length} bytes`);
+            this.logger.log(`MIDI buffer length: ${buffer.length} bytes`);
+            this.logger.log(`First 20 bytes of MIDI: ${Array.from(midiArray.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+
             return {
-                buffer: Buffer.from(midi.toArray()),
+                buffer,
                 midiData
             };
         } catch (error) {

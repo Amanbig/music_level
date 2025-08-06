@@ -60,25 +60,38 @@ export class GenerateController {
     }
 
     @Get(':id/download')
-    async downloadGeneration(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    async downloadGeneration(@Param('id') id: string, @Res() res: Response) {
         try {
+            console.log(`Download request for generation ID: ${id}`);
+            
             const generation = await this.generateService.getGeneration(id);
+            console.log(`Generation found: ${generation.name}, fileId: ${generation.fileId}`);
+            
             if (!generation.fileId) {
                 throw new BadRequestException('No MIDI file associated with this generation');
             }
             
-            const file = await this.appwriteService.downloadFile(generation.fileId);
+            const fileBuffer = await this.appwriteService.downloadFile(generation.fileId);
+            console.log(`File downloaded from Appwrite, type: ${typeof fileBuffer}, length: ${fileBuffer?.length || 'unknown'}`);
             
-            // Set proper headers for MIDI file download
+            // Clean filename for download
+            const cleanFileName = generation.name.replace(/[^a-zA-Z0-9\-_\s]/g, '').replace(/\s+/g, '_');
+            
+            // Set proper headers for binary MIDI file download
             res.set({
                 'Content-Type': 'audio/midi',
-                'Content-Disposition': `attachment; filename="${generation.name}.mid"`,
+                'Content-Disposition': `attachment; filename="${cleanFileName}.mid"`,
+                'Content-Length': fileBuffer.length.toString(),
+                'Cache-Control': 'no-cache',
             });
             
-            return file;
+            console.log(`Sending MIDI file: ${cleanFileName}.mid, size: ${fileBuffer.length} bytes`);
+            
+            // Send the binary data directly
+            res.send(fileBuffer);
         } catch (error) {
             console.error('Download error:', error);
-            throw new BadRequestException('Failed to download file');
+            res.status(400).json({ error: 'Failed to download file' });
         }
     }
 

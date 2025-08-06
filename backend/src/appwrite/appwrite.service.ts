@@ -43,7 +43,7 @@ export class AppwriteService {
         this.logger.log('Appwrite service initialized');
     }
 
-    async createUser(userData: CreateUserDto):Promise<AppwriteUser>{
+    async createUser(userData: CreateUserDto): Promise<AppwriteUser> {
         try {
             const user = await this.users.create(
                 ID.unique(),
@@ -339,13 +339,36 @@ export class AppwriteService {
         }
     }
 
-    async downloadFile(fileId: string): Promise<any> {
+    async downloadFile(fileId: string): Promise<Buffer> {
         try {
-            const result = await this.storage.getFileDownload(
+            this.logger.log(`Downloading file from Appwrite storage: ${fileId}`);
+            const result: any = await this.storage.getFileDownload(
                 this.bucketId,
                 fileId
             );
-            return result;
+            this.logger.log(`File downloaded successfully, type: ${typeof result}, constructor: ${result?.constructor?.name}`);
+
+            // Handle ArrayBuffer
+            if (result instanceof ArrayBuffer) {
+                this.logger.log(`Downloaded ArrayBuffer size: ${result.byteLength} bytes`);
+                const uint8Array = new Uint8Array(result);
+                this.logger.log(`First 20 bytes: ${Array.from(uint8Array.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+                return Buffer.from(result);
+            }
+
+            // Handle Buffer
+            if (Buffer.isBuffer(result)) {
+                this.logger.log(`Downloaded Buffer size: ${result.length} bytes`);
+                this.logger.log(`First 20 bytes: ${Array.from(result.slice(0, 20)).map((b: number) => b.toString(16).padStart(2, '0')).join(' ')}`);
+                return result;
+            }
+
+            // Handle any other data type by converting to Buffer
+            this.logger.log(`Downloaded data type: ${typeof result}, converting to Buffer`);
+            if (result && typeof result === 'object' && 'length' in result) {
+                this.logger.log(`Data length: ${result.length}`);
+            }
+            return Buffer.from(result);
         } catch (error) {
             this.logger.error('Error downloading file:', error);
             throw new BadRequestException('Failed to download file');
