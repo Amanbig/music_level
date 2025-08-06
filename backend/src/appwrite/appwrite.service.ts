@@ -18,25 +18,22 @@ export class AppwriteService {
     public storage: Storage;
 
     constructor(private configService: ConfigService) {
-        this.projectId = this.configService.get<string>('appwrite.projectId') || 'projectId';
-        this.databaseId = this.configService.get<string>('appwrite.databaseId') || 'main';
-        this.userCollectionId = this.configService.get<string>(
-            'appwrite.userCollectionId',
-        ) || 'users';
-        this.filesCollectionId = this.configService.get<string>(
-            'appwrite.filesCollectionId',
-        ) || 'files';
+        this.projectId = this.configService.get<string>('APPWRITE_PROJECT_ID') || 'projectId';
+        this.databaseId = this.configService.get<string>('APPWRITE_DATABASE_ID') || 'main';
+        this.userCollectionId = this.configService.get<string>('APPWRITE_USER_COLLECTION_ID') || 'users';
+        this.filesCollectionId = this.configService.get<string>('APPWRITE_FILES_COLLECTION_ID') || 'files';
+        this.bucketId = this.configService.get<string>('APPWRITE_BUCKET_ID') || '';
 
-        this.bucketId = this.configService.get<string>(
-            'appwrite.bucketId',
-        ) || ''
-
-        // console.log(this.projectId)
+        console.log('Appwrite Configuration:', {
+            projectId: this.projectId,
+            databaseId: this.databaseId,
+            endpoint: this.configService.get<string>('APPWRITE_ENDPOINT')
+        });
 
         this.client = new Client()
-            .setEndpoint(this.configService.get<string>('appwrite.endpoint') || 'https://cloud.appwrite.io/v1')
+            .setEndpoint(this.configService.get<string>('APPWRITE_ENDPOINT') || 'https://cloud.appwrite.io/v1')
             .setProject(this.projectId)
-            .setKey(this.configService.get<string>('appwrite.apiKey') || '');
+            .setKey(this.configService.get<string>('APPWRITE_API_KEY') || '');
 
         this.account = new Account(this.client);
         this.databases = new Databases(this.client);

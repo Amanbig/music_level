@@ -1,10 +1,9 @@
 import { Global, Module } from "@nestjs/common";
 import { AppwriteService } from "./appwrite.service";
-import { ConfigModule } from "@nestjs/config";
 
 @Global()
 @Module({
-    imports: [ConfigModule],
+    imports: [],
     providers: [
         AppwriteService
     ],
@@ -12,4 +11,4 @@ import { ConfigModule } from "@nestjs/config";
         AppwriteService
     ]
 })
-export class AppwriteModule {}
+export class AppwriteModule { }

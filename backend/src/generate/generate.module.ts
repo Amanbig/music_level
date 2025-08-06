@@ -9,4 +9,4 @@ import { AppwriteModule } from 'src/appwrite/appwrite.module';
   controllers: [GenerateController],
   providers: [GenerateService]
 })
-export class GenerateModule {}
+export class GenerateModule { }

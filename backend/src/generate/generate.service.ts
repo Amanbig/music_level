@@ -17,7 +17,7 @@ export class GenerateService {
         private appwriteService: AppwriteService,
         private configService: ConfigService,
     ) {
-        this.generationsCollectionId = this.configService.get<string>('appwrite.generationsCollectionId') || 'generations';
+        this.generationsCollectionId = this.configService.get<string>('APPWRITE_GENERATIONS_COLLECTION_ID') || 'generations';
     }
 
     // Batch save multiple generations
