@@ -41,7 +41,7 @@ export default function SignupPage() {
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-between mb-8">
-            <Link href="/landing" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to home
             </Link>

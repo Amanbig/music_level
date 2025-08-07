@@ -31,14 +31,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           console.log('Layout: User set successfully');
         } else {
           console.log('Layout: No user found, checking if should redirect');
-          if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+          if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing') && pathname !== '/') {
             console.log('Layout: Redirecting to login');
             router.push('/auth/login');
           }
         }
       } catch (error) {
         console.error('Layout: Auth check error:', error);
-        if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing')) {
+        if (!pathname.startsWith('/auth') && !pathname.startsWith('/landing') && pathname !== '/') {
           console.log('Layout: Error occurred, redirecting to login');
           router.push('/auth/login');
         }
@@ -63,8 +63,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     );
   }
 
-  // Don't show layout for auth and landing pages
-  if (pathname.startsWith('/auth') || pathname.startsWith('/landing')) {
+  // Don't show layout for auth, landing pages, and home page
+  if (pathname.startsWith('/auth') || pathname.startsWith('/landing') || pathname === '/') {
     return <>{children}</>;
   }
 
@@ -125,14 +125,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Desktop User Menu */}
             <div className="hidden md:flex md:items-center md:space-x-3">
               <ThemeToggle />
-              
+
               <div className="flex items-center space-x-3 px-3 py-2 bg-secondary rounded-lg">
                 <div className="p-1.5 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full">
                   <UserIcon className="h-4 w-4 text-white" />
                 </div>
                 <span className="text-sm font-medium text-secondary-foreground">{user.name}</span>
               </div>
-              
+
               <Button
                 variant="ghost"
                 size="sm"

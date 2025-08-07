@@ -16,13 +16,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  
+
   const { register, handleSubmit, formState: { errors } } = useForm<LoginData>();
 
   const onSubmit = async (data: LoginData) => {
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await authService.login(data);
       console.log('Login result:', result);
@@ -42,19 +42,19 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-between mb-8">
-            <Link href="/landing" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to home
             </Link>
             <ThemeToggle />
           </div>
-          
+
           <div className="flex justify-center mb-6">
             <div className="p-3 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl">
               <Music className="h-8 w-8 text-white" />
             </div>
           </div>
-          
+
           <h2 className="text-3xl font-bold text-foreground mb-2">
             Welcome back
           </h2>
@@ -62,7 +62,7 @@ export default function LoginPage() {
             Sign in to continue creating amazing music with AI
           </p>
         </div>
-        
+
         <Card variant="elevated" className="backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">Sign In</CardTitle>
@@ -73,14 +73,14 @@ export default function LoginPage() {
                 {error}
               </Alert>
             )}
-            
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <Input
                 label="Email Address"
                 type="email"
                 placeholder="Enter your email"
                 icon={<Mail className="h-5 w-5" />}
-                {...register('email', { 
+                {...register('email', {
                   required: 'Email is required',
                   pattern: {
                     value: /^\S+@\S+$/i,
@@ -89,13 +89,13 @@ export default function LoginPage() {
                 })}
                 error={errors.email?.message}
               />
-              
+
               <Input
                 label="Password"
                 type="password"
                 placeholder="Enter your password"
                 icon={<Lock className="h-5 w-5" />}
-                {...register('password', { 
+                {...register('password', {
                   required: 'Password is required',
                   minLength: {
                     value: 6,
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 })}
                 error={errors.password?.message}
               />
-              
+
               <Button
                 type="submit"
                 loading={loading}
@@ -115,7 +115,7 @@ export default function LoginPage() {
                 Sign In
               </Button>
             </form>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
@@ -124,7 +124,7 @@ export default function LoginPage() {
                 <span className="px-2 bg-card text-muted-foreground">New to Music Level?</span>
               </div>
             </div>
-            
+
             <div className="text-center">
               <Link href="/auth/signup">
                 <Button variant="outline" size="lg" className="w-full">
@@ -134,7 +134,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
-        
+
         <p className="text-center text-xs text-muted-foreground">
           By signing in, you agree to our Terms of Service and Privacy Policy
         </p>
