@@ -272,6 +272,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **NestJS** and **Next.js** communities for excellent frameworks
 - **Tone.js** for MIDI processing and audio capabilities
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95%EF%B8%8F-orange?style=for-the-badge)](https://buymeacoffee.com/amanpreet)
+
 ## 📞 Support
 
 If you encounter any issues or have questions:
