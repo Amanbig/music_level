@@ -61,62 +61,124 @@ export class GenerateService {
     }
 
     // Function to save a generation with MIDI to Appwrite
-    async saveGeneration(saveDto: SaveGenerationDto): Promise<GenerationResponse> {
+    // Helper method to create file upload
+private async uploadMidiFile(buffer: Buffer, fileName: string): Promise<any> {
+    const fileId = ID.unique();
+    
+    this.logger.log(`Attempting to upload MIDI file: ${fileName}, size: ${buffer.length} bytes`);
+    
+    // Strategy 1: Try File constructor (requires polyfills)
+    if (typeof File !== 'undefined' && typeof Blob !== 'undefined') {
         try {
-            // Generate MIDI file
-            const { buffer, midiData } = await this.saveNotesAsMidi(saveDto.notes, saveDto.instrument || 'piano');
-
-            // Create file in Appwrite Storage
-            const fileId = ID.unique();
-            const fileName = `${saveDto.name.replace(/[^a-zA-Z0-9]/g, '_')}.mid`;
-
-            // Create a File-like object from Buffer for Appwrite (Node.js compatible)
-            const fileBlob = new Blob([buffer], { type: 'audio/midi' });
-            const file = new File([fileBlob], fileName, { type: 'audio/midi' });
-
-            // Upload MIDI file to Appwrite storage
-            this.logger.log(`Uploading file to Appwrite storage with ID: ${fileId}, size: ${buffer.length} bytes`);
-            const uploadResult = await this.appwriteService.storage.createFile(
+            this.logger.log('Trying File constructor approach...');
+            const blob = new Blob([buffer], { type: 'audio/midi' });
+            const file = new File([blob], fileName, { type: 'audio/midi' });
+            
+            const result = await this.appwriteService.storage.createFile(
                 this.appwriteService.bucketId,
                 fileId,
                 file
             );
-            this.logger.log(`File uploaded successfully: ${uploadResult.$id}, size: ${uploadResult.sizeOriginal} bytes`);
-
-            // Create document in database
-            const document = await this.appwriteService.databases.createDocument(
-                this.appwriteService.databaseId,
-                this.generationsCollectionId,
-                ID.unique(),
-                {
-                    name: saveDto.name,
-                    notes: JSON.stringify(saveDto.notes), // Convert array to JSON string
-                    midiData: JSON.stringify(midiData),   // Convert object to JSON string
-                    fileId: fileId,
-                    description: saveDto.description || '',
-                    userId: saveDto.userId,
-                    instrument: saveDto.instrument || 'piano',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                }
-            );
-
-            return {
-                id: document.$id,
-                name: document.name,
-                notes: JSON.parse(document.notes), // Parse JSON string back to array
-                description: document.description,
-                userId: document.userId,
-                fileId: document.fileId, // Include fileId for download functionality
-                instrument: document.instrument,
-                createdAt: document.createdAt,
-                updatedAt: document.updatedAt,
-            };
+            
+            this.logger.log('✅ File constructor approach succeeded');
+            return { result, fileId };
         } catch (error) {
-            this.logger.error('Error saving generation:', error);
-            throw new Error('Failed to save generation');
+            this.logger.warn('❌ File constructor approach failed:', error.message);
         }
     }
+
+    // Strategy 2: Try FormData approach
+    try {
+        this.logger.log('Trying FormData approach...');
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('file', buffer, {
+            filename: fileName,
+            contentType: 'audio/midi',
+        });
+
+        const result = await this.appwriteService.storage.createFile(
+            this.appwriteService.bucketId,
+            fileId,
+            form
+        );
+        
+        this.logger.log('✅ FormData approach succeeded');
+        return { result, fileId };
+    } catch (error) {
+        this.logger.warn('❌ FormData approach failed:', error.message);
+    }
+
+    // Strategy 3: Try InputFile (if available)
+    try {
+        this.logger.log('Trying InputFile approach...');
+        const { InputFile } = require('node-appwrite');
+        
+        if (InputFile && InputFile.fromBuffer) {
+            const inputFile = InputFile.fromBuffer(buffer, fileName);
+            const result = await this.appwriteService.storage.createFile(
+                this.appwriteService.bucketId,
+                fileId,
+                inputFile
+            );
+            
+            this.logger.log('✅ InputFile approach succeeded');
+            return { result, fileId };
+        }
+    } catch (error) {
+        this.logger.warn('❌ InputFile approach failed:', error.message);
+    }
+
+    throw new Error('All file upload strategies failed. Please check your Appwrite SDK version and configuration.');
+}
+
+// Updated saveGeneration method
+async saveGeneration(saveDto: SaveGenerationDto): Promise<GenerationResponse> {
+    try {
+        // Generate MIDI file
+        const { buffer, midiData } = await this.saveNotesAsMidi(saveDto.notes, saveDto.instrument || 'piano');
+        
+        const fileName = `${saveDto.name.replace(/[^a-zA-Z0-9]/g, '_')}.mid`;
+        
+        // Upload the file using our helper method
+        const { result: uploadResult, fileId } = await this.uploadMidiFile(buffer, fileName);
+        
+        this.logger.log(`File uploaded successfully: ${uploadResult.$id}, size: ${uploadResult.sizeOriginal} bytes`);
+
+        // Create document in database
+        const document = await this.appwriteService.databases.createDocument(
+            this.appwriteService.databaseId,
+            this.generationsCollectionId,
+            ID.unique(),
+            {
+                name: saveDto.name,
+                notes: JSON.stringify(saveDto.notes),
+                midiData: JSON.stringify(midiData),
+                fileId: fileId,
+                description: saveDto.description || '',
+                userId: saveDto.userId,
+                instrument: saveDto.instrument || 'piano',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }
+        );
+
+        return {
+            id: document.$id,
+            name: document.name,
+            notes: JSON.parse(document.notes),
+            description: document.description,
+            userId: document.userId,
+            fileId: document.fileId,
+            instrument: document.instrument,
+            createdAt: document.createdAt,
+            updatedAt: document.updatedAt,
+        };
+    } catch (error) {
+        this.logger.error('Error saving generation:', error);
+        throw new Error('Failed to save generation: ' + error.message);
+    }
+}
 
     // Function to get a user's generations
     async getUserGenerations(userId: string): Promise<GenerationResponse[]> {
