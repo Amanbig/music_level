@@ -181,12 +181,12 @@ export class AppwriteService {
 
     async deleteSession(sessionId?: string): Promise<void> {
         try {
-            // For server-side usage, session deletion is handled by JWT invalidation
-            // No actual session to delete in Appwrite since we're using JWT tokens
-            this.account.deleteSession(
-                sessionId || 'current',
-            );
-            this.logger.log(`Session logout requested: ${sessionId || 'current'}`);
+            // Since we're using JWT tokens for authentication, we don't need to delete Appwrite sessions
+            // The JWT token invalidation is handled by the frontend (removing the cookie)
+            this.logger.log(`Session logout requested: ${sessionId || 'current'} - JWT token will be invalidated by frontend`);
+            
+            // Note: If you want to use Appwrite sessions, make sure your API key has "account" scope
+            // this.account.deleteSession(sessionId || 'current');
         } catch (error) {
             this.logger.error('Error deleting session:', error);
             // Don't throw error on logout - always allow logout to complete
