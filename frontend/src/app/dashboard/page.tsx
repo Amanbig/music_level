@@ -9,12 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Loading } from '@/components/ui/Loading';
 import { Layout } from '@/components/Layout';
-import { Music, Download, Trash2, Plus, Calendar, Sparkles, TrendingUp, Clock } from 'lucide-react';
+import { Music, Download, Trash2, Plus, Calendar, Sparkles, TrendingUp, Clock, Play, Pause } from 'lucide-react';
+import { useMidiPlayer } from '@/hooks/useMidiPlayer';
 
 export default function DashboardPage() {
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(null);
+  const midiPlayer = useMidiPlayer();
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,6 +63,32 @@ export default function DashboardPage() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading generation:', error);
+    }
+  };
+
+  const handlePlayPause = async (generation: Generation) => {
+    try {
+      if (midiPlayer.isPlaying && currentlyPlayingId === generation.id) {
+        // If this specific generation is currently playing, pause it
+        midiPlayer.pause();
+        setCurrentlyPlayingId(null);
+      } else {
+        // Stop any currently playing music first
+        if (midiPlayer.isPlaying) {
+          midiPlayer.stop();
+        }
+        
+        // Start playing this generation
+        if (generation.notes && Array.isArray(generation.notes)) {
+          setCurrentlyPlayingId(generation.id);
+          await midiPlayer.play(generation.notes);
+        } else {
+          console.error('No notes data available for playback');
+        }
+      }
+    } catch (error) {
+      console.error('Error with playback:', error);
+      setCurrentlyPlayingId(null);
     }
   };
 
@@ -221,6 +250,21 @@ export default function DashboardPage() {
                       )}
 
                       <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handlePlayPause(generation)}
+                          disabled={midiPlayer.isLoading}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-950/50"
+                        >
+                          {midiPlayer.isLoading && currentlyPlayingId === generation.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                          ) : (midiPlayer.isPlaying && currentlyPlayingId === generation.id) ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
