@@ -27,14 +27,14 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  
+
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const initializeSynth = useCallback(async () => {
     if (!synthRef.current) {
       await Tone.start();
-      synthRef.current = new Tone.PolySynth({
+      synthRef.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: {
           type: 'triangle'
         },
@@ -54,7 +54,7 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
       await initializeSynth();
 
       let midi: Midi;
-      
+
       if (typeof midiData === 'string') {
         // Load from URL
         midi = await Midi.fromUrl(midiData);
@@ -62,7 +62,7 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
         // Create from note data
         midi = new Midi();
         const track = midi.addTrack();
-        
+
         midiData.forEach((note) => {
           track.addNote({
             name: note.note,
@@ -74,7 +74,7 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
       }
 
       setDuration(midi.duration);
-      
+
       // Clear any existing scheduled events
       Tone.Transport.cancel();
       Tone.Transport.stop();
@@ -102,7 +102,7 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
       intervalRef.current = setInterval(() => {
         const position = Tone.Transport.seconds;
         setCurrentTime(position);
-        
+
         if (position >= midi.duration) {
           stop();
         }
@@ -130,7 +130,7 @@ export const useMidiPlayer = (): UseMidiPlayerReturn => {
     Tone.Transport.position = 0;
     setIsPlaying(false);
     setCurrentTime(0);
-    
+
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
