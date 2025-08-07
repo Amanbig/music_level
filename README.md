@@ -17,7 +17,7 @@ An AI-powered music generation platform that allows users to create unique music
 This project follows a secure three-tier architecture with Next.js API routes acting as a proxy layer:
 
 ```
-Frontend (React) → Next.js API Routes → NestJS Backend
+Frontend (React) → Next.js API Routes → NestJS Backend → Appwrite
 ```
 
 ```
