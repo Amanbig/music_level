@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       headers: createAuthHeaders(token),
     });
     
-    console.log('Auth/me API route - Backend response:', response.data);
+    // console.log('Auth/me API route - Backend response:', response.data);
     return NextResponse.json(response.data);
     
   } catch (error: any) {

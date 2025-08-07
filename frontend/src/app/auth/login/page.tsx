@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       const result = await authService.login(data);
-      console.log('Login result:', result);
+      // console.log('Login result:', result);
       console.log('Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (err: any) {

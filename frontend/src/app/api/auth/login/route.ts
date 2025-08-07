@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const response = await backendApi.post('/auth/login', body);
     
     const { accessToken, user, ...rest } = response.data;
-    console.log('Login API route - Backend response:', { hasAccessToken: !!accessToken, hasUser: !!user, ...rest });
+    // console.log('Login API route - Backend response:', { hasAccessToken: !!accessToken, hasUser: !!user, ...rest });
     
     if (accessToken) {
       // Set HTTP-only cookie for security

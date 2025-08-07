@@ -305,14 +305,14 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link href="/generate">
-                  <Button size="xl" variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-white dark:text-blue-600 dark:hover:bg-blue-50 w-full sm:w-auto">
+                  <Button size="xl" className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-card dark:text-blue-400 dark:hover:bg-card/80 dark:border dark:border-border w-full sm:w-auto">
                     <Play className="h-5 w-5 mr-2" />
                     Generate Music Now
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button size="xl" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                  <Button size="xl" variant="outline" className="border-white text-white hover:bg-white/10 dark:border-border dark:text-foreground dark:hover:bg-accent w-full sm:w-auto">
                     View My Library
                   </Button>
                 </Link>
@@ -328,7 +328,7 @@ export default function Home() {
                 Join thousands of creators who are already using AI to bring their musical ideas to life
               </p>
               <Link href="/auth/signup">
-                <Button size="xl" variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-white dark:text-blue-600 dark:hover:bg-blue-50">
+                <Button size="xl" className="text-blue-600 hover:bg-blue-50 dark:bg-card dark:text-blue-400 dark:hover:bg-card/80 dark:border dark:border-border">
                   <Users className="h-5 w-5 mr-2" />
                   Join Music Level Today
                   <ArrowRight className="h-5 w-5 ml-2" />

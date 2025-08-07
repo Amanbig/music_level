@@ -25,8 +25,13 @@ const instrumentOptions = [
   { value: 'guitar', label: '🎸 Guitar' },
   { value: 'violin', label: '🎻 Violin' },
   { value: 'flute', label: '🪈 Flute' },
-  { value: 'drums', label: '🥁 Drums' }
+  { value: 'drums', label: '🥁 Drums' },
+  { value: 'trumpet', label: '🎺 Trumpet' },
+  { value: 'saxophone', label: '🎷 Saxophone' },
+  { value: 'cello', label: '🎻 Cello' },
+
 ];
+
 
 export default function GeneratePage() {
   const [loading, setLoading] = useState(false);
@@ -51,10 +56,10 @@ export default function GeneratePage() {
     try {
       const { saveName, saveDescription, ...generateData } = data;
       const result = await musicService.generateMusic(generateData);
-      console.log('AI generation result:', result);
+      // console.log('AI generation result:', result);
       setGeneratedMusic(result);
     } catch (error: any) {
-      console.error('Generation error:', error);
+      // console.error('Generation error:', error);
       setError(error.response?.data?.message || 'Failed to generate music. Please try again.');
     } finally {
       setLoading(false);

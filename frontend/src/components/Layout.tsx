@@ -25,7 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       console.log('Layout: Checking auth for pathname:', pathname);
       try {
         const currentUser = await authService.getCurrentUser();
-        console.log('Layout: Current user:', currentUser);
+        // console.log('Layout: Current user:', currentUser);
         if (currentUser) {
           setUser(currentUser);
           console.log('Layout: User set successfully');
