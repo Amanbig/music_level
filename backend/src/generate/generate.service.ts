@@ -62,6 +62,7 @@ export class GenerateService {
 
     // Function to save a generation with MIDI to Appwrite
     // Helper method to create file upload
+// Helper method to create file upload
 private async uploadMidiFile(buffer: Buffer, fileName: string): Promise<any> {
     const fileId = ID.unique();
     
@@ -87,11 +88,14 @@ private async uploadMidiFile(buffer: Buffer, fileName: string): Promise<any> {
         }
     }
 
-    // Strategy 2: Try FormData approach
+    // Strategy 2: Try FormData approach with correct field names
     try {
         this.logger.log('Trying FormData approach...');
         const FormData = require('form-data');
         const form = new FormData();
+        
+        // Appwrite expects specific field names
+        form.append('fileId', fileId);
         form.append('file', buffer, {
             filename: fileName,
             contentType: 'audio/midi',
@@ -107,15 +111,36 @@ private async uploadMidiFile(buffer: Buffer, fileName: string): Promise<any> {
         return { result, fileId };
     } catch (error) {
         this.logger.warn('❌ FormData approach failed:', error.message);
+        
+        // Try alternative FormData structure
+        try {
+            this.logger.log('Trying alternative FormData structure...');
+            const FormData = require('form-data');
+            const form = new FormData();
+            
+            // Try without fileId in form data
+            form.append('file', buffer, fileName);
+
+            const result = await this.appwriteService.storage.createFile(
+                this.appwriteService.bucketId,
+                fileId,
+                form
+            );
+            
+            this.logger.log('✅ Alternative FormData approach succeeded');
+            return { result, fileId };
+        } catch (altError) {
+            this.logger.warn('❌ Alternative FormData approach also failed:', altError.message);
+        }
     }
 
     // Strategy 3: Try InputFile (if available)
     try {
         this.logger.log('Trying InputFile approach...');
-        const { InputFile } = require('node-appwrite');
+        const appwrite = require('node-appwrite');
         
-        if (InputFile && InputFile.fromBuffer) {
-            const inputFile = InputFile.fromBuffer(buffer, fileName);
+        if (appwrite.InputFile && appwrite.InputFile.fromBuffer) {
+            const inputFile = appwrite.InputFile.fromBuffer(buffer, fileName);
             const result = await this.appwriteService.storage.createFile(
                 this.appwriteService.bucketId,
                 fileId,
@@ -124,9 +149,111 @@ private async uploadMidiFile(buffer: Buffer, fileName: string): Promise<any> {
             
             this.logger.log('✅ InputFile approach succeeded');
             return { result, fileId };
+        } else {
+            this.logger.log('InputFile.fromBuffer not available');
         }
     } catch (error) {
         this.logger.warn('❌ InputFile approach failed:', error.message);
+    }
+
+    // Strategy 4: Try creating temporary file approach
+    try {
+        this.logger.log('Trying temporary file approach...');
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
+        
+        const tempPath = path.join(os.tmpdir(), `${Date.now()}-${fileName}`);
+        fs.writeFileSync(tempPath, buffer);
+        
+        try {
+            const appwrite = require('node-appwrite');
+            if (appwrite.InputFile && appwrite.InputFile.fromPath) {
+                const inputFile = appwrite.InputFile.fromPath(tempPath, fileName);
+                const result = await this.appwriteService.storage.createFile(
+                    this.appwriteService.bucketId,
+                    fileId,
+                    inputFile
+                );
+                
+                this.logger.log('✅ Temporary file approach succeeded');
+                return { result, fileId };
+            }
+        } finally {
+            // Always clean up the temp file
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+        }
+    } catch (error) {
+        this.logger.warn('❌ Temporary file approach failed:', error.message);
+    }
+
+    // Strategy 5: Try Readable Stream approach
+    try {
+        this.logger.log('Trying Readable Stream approach...');
+        const { Readable } = require('stream');
+        
+        const stream = new Readable({
+            read() {
+                this.push(buffer);
+                this.push(null);
+            }
+        });
+        
+        // Add properties to make it look like a file
+        (stream as any).name = fileName;
+        (stream as any).type = 'audio/midi';
+        (stream as any).size = buffer.length;
+
+        const result = await this.appwriteService.storage.createFile(
+            this.appwriteService.bucketId,
+            fileId,
+            stream as any
+        );
+        
+        this.logger.log('✅ Readable Stream approach succeeded');
+        return { result, fileId };
+    } catch (error) {
+        this.logger.warn('❌ Readable Stream approach failed:', error.message);
+    }
+
+    // Strategy 6: Direct REST API call as last resort
+    try {
+        this.logger.log('Trying direct REST API approach...');
+        const FormData = require('form-data');
+        const axios = require('axios');
+        
+        const form = new FormData();
+        form.append('fileId', fileId);
+        form.append('file', buffer, {
+            filename: fileName,
+            contentType: 'audio/midi'
+        });
+        
+        // Get Appwrite endpoint and project ID
+        const endpoint = this.configService.get<string>('APPWRITE_ENDPOINT');
+        const projectId = this.configService.get<string>('APPWRITE_PROJECT_ID');
+        const apiKey = this.configService.get<string>('APPWRITE_API_KEY');
+        
+        if (endpoint && projectId && apiKey) {
+            const url = `${endpoint}/storage/buckets/${this.appwriteService.bucketId}/files`;
+            
+            const response = await axios.post(url, form, {
+                headers: {
+                    ...form.getHeaders(),
+                    'X-Appwrite-Project': projectId,
+                    'X-Appwrite-Key': apiKey
+                }
+            });
+            
+            this.logger.log('✅ Direct REST API approach succeeded');
+            return { result: response.data, fileId };
+        } else {
+            this.logger.warn('Missing required config for REST API approach');
+        }
+    } catch (error) {
+        this.logger.warn('❌ Direct REST API approach failed:', error.message);
     }
 
     throw new Error('All file upload strategies failed. Please check your Appwrite SDK version and configuration.');
