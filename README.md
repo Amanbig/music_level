@@ -1,6 +1,6 @@
 # Music Level 🎵
 
-An AI-powered music generation platform that allows users to create unique musical compositions using artificial intelligence. Built with a modern tech stack featuring NestJS backend and Next.js frontend.
+An AI-powered music generation platform that allows users to create unique musical compositions using artificial intelligence that is gemini model. Built with a modern tech stack featuring NestJS backend and Next.js frontend.
 
 ## 🌟 Features
 
