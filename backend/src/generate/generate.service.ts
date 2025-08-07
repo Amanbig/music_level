@@ -4,7 +4,7 @@ import { Note } from './noteDto';
 import { GeminiService } from 'src/gemini/gemini.service';
 import { AppwriteService } from 'src/appwrite/appwrite.service';
 import { GenerationRequestDto, SaveGenerationDto, GenerationResponse } from './dto/generation.dto';
-import { ID, Query } from 'node-appwrite';
+import { ID, Query, InputFile } from 'node-appwrite';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -70,22 +70,15 @@ export class GenerateService {
             const fileId = ID.unique();
             const fileName = `${saveDto.name.replace(/[^a-zA-Z0-9]/g, '_')}.mid`;
 
-            // Create a File-like object from the buffer
-            this.logger.log(`Creating file object: ${fileName}, size: ${buffer.length} bytes`);
-            const fileBlob = new Blob([buffer], { type: 'audio/midi' });
-            const fileObject = new File([fileBlob], fileName, {
-                type: 'audio/midi',
-                lastModified: Date.now()
-            });
+            // Create InputFile from Buffer (Node.js compatible)
+            const inputFile = InputFile.fromBuffer(buffer, fileName);
 
-            this.logger.log(`File object created: ${fileObject.name}, size: ${fileObject.size}, type: ${fileObject.type}`);
-
-            // Upload MIDI file
-            this.logger.log(`Uploading file to Appwrite storage with ID: ${fileId}`);
+            // Upload MIDI file using InputFile
+            this.logger.log(`Uploading file to Appwrite storage with ID: ${fileId}, size: ${buffer.length} bytes`);
             const uploadResult = await this.appwriteService.storage.createFile(
                 this.appwriteService.bucketId,
                 fileId,
-                fileObject
+                inputFile
             );
             this.logger.log(`File uploaded successfully: ${uploadResult.$id}, size: ${uploadResult.sizeOriginal} bytes`);
 
